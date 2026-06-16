@@ -1149,7 +1149,230 @@ p  { line-height: 1.75; color: var(--ink-light); }
   50% { transform: translateY(-6px); }
 }
 
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   AUTH MODAL
+   ============================================================ */
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(59, 47, 47, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0s 0.4s;
+}
+
+.auth-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.4s ease, visibility 0s 0s;
+}
+
+.auth-modal-content {
+  background: var(--cream);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 440px;
+  padding: 2.5rem;
+  position: relative;
+  box-shadow: 0 24px 64px rgba(59, 47, 47, 0.2);
+  transform: translateY(20px) scale(0.98);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.auth-modal-overlay.active .auth-modal-content {
+  transform: translateY(0) scale(1);
+}
+
+.auth-close-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--ink-light);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.auth-close-btn:hover {
+  background: var(--blush);
+  color: var(--ink);
+  transform: rotate(90deg);
+}
+
+.auth-modal-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-modal-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-modal-title {
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-modal-subtitle {
+  font-size: 0.9rem;
+  color: var(--ink-light);
+  line-height: 1.5;
+}
+
+.auth-social-buttons {
+  margin-bottom: 1.5rem;
+}
+
+.auth-social-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 0.8rem;
+  background: white;
+  border: 1px solid rgba(59, 47, 47, 0.1);
+}
+
+.auth-social-btn:hover {
+  background: #f8f9fa;
+  border-color: rgba(59, 47, 47, 0.2);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--ink-light);
+  font-size: 0.85rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(59, 47, 47, 0.1);
+}
+
+.auth-divider span {
+  padding: 0 1rem;
+}
+
+.auth-form-group {
+  margin-bottom: 1.25rem;
+}
+
+.auth-form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: var(--ink);
+}
+
+.auth-form-group input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(59, 47, 47, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  color: var(--ink);
+  transition: var(--transition);
+}
+
+.auth-form-group input:focus {
+  outline: none;
+  border-color: var(--dusty-rose);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(232, 165, 152, 0.15);
+}
+
+.auth-submit-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.auth-modal-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--ink-light);
+}
+
+.auth-modal-footer a {
+  color: var(--dusty-rose);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-modal-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Avatar Grid Styles */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.avatar-option {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  cursor: pointer;
+  background: rgba(59, 47, 47, 0.05);
+  border: 2px solid transparent;
+  transition: var(--transition);
+}
+
+.avatar-option:hover {
+  background: var(--blush);
+  transform: scale(1.1);
+}
+
+.avatar-option.active {
+  background: white;
+  border-color: var(--dusty-rose);
+  box-shadow: 0 4px 12px rgba(232, 165, 152, 0.3);
+  transform: scale(1.1);
+}
+
+/* Step Transitions */
+.auth-step {
+  animation: fadeInStep 0.4s ease;
+}
+
+@keyframes fadeInStep {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

@@ -6,6 +6,127 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  let isLoggedIn = false;
+
+  /* ──────────────────────────────────────────────────────────
+     AUTH MODAL LOGIC
+     ────────────────────────────────────────────────────────── */
+  const authModal = document.getElementById('auth-modal');
+  const authCloseBtn = document.getElementById('auth-close-btn');
+  const navAvatar = document.getElementById('nav-avatar');
+  const navGetStarted = document.getElementById('nav-get-started');
+  const authFormStep1 = document.getElementById('auth-form-step1');
+  const authFormStep2 = document.getElementById('auth-form-step2');
+  const authStep1 = document.getElementById('auth-step-1');
+  const authStep2 = document.getElementById('auth-step-2');
+  const btnGoogleAuth = document.getElementById('btn-google-auth');
+  const btnBackStep1 = document.getElementById('btn-back-step1');
+  const authEmailInput = document.getElementById('auth-email');
+  const authCodeMessage = document.getElementById('auth-code-message');
+  const avatarOptions = document.querySelectorAll('.avatar-option');
+  let selectedAvatar = '🍵';
+  
+  function showAuthModal() {
+    if (authModal) authModal.classList.add('active');
+    // Reset to step 1
+    if (authStep1) authStep1.style.display = 'block';
+    if (authStep2) authStep2.style.display = 'none';
+  }
+  
+  function closeAuthModal() {
+    if (authModal) authModal.classList.remove('active');
+  }
+  
+  function completeLogin(avatarOrText) {
+    isLoggedIn = true;
+    closeAuthModal();
+    
+    // Update UI to reflect logged-in state
+    if (navAvatar) {
+      navAvatar.style.background = 'var(--sage)';
+      navAvatar.title = 'Profile';
+      navAvatar.textContent = avatarOrText;
+    }
+    if (navGetStarted) {
+      navGetStarted.style.display = 'none';
+    }
+  }
+
+  if (authCloseBtn) {
+    authCloseBtn.addEventListener('click', closeAuthModal);
+  }
+  
+  if (authModal) {
+    authModal.addEventListener('click', (e) => {
+      if (e.target === authModal) closeAuthModal();
+    });
+  }
+
+  if (navAvatar) {
+    navAvatar.addEventListener('click', (e) => {
+      if (!isLoggedIn) {
+        e.preventDefault();
+        showAuthModal();
+      }
+    });
+  }
+
+  if (navGetStarted) {
+    navGetStarted.addEventListener('click', (e) => {
+      if (!isLoggedIn) {
+        e.preventDefault();
+        showAuthModal();
+      }
+    });
+  }
+
+  // Google Auth Button
+  if (btnGoogleAuth) {
+    btnGoogleAuth.addEventListener('click', () => {
+      completeLogin('G');
+      console.log('Logged in with Google');
+    });
+  }
+
+  // Step 1 Submit: Send Email Code
+  if (authFormStep1) {
+    authFormStep1.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = authEmailInput ? authEmailInput.value : 'your email';
+      
+      // Transition to Step 2
+      if (authStep1) authStep1.style.display = 'none';
+      if (authStep2) authStep2.style.display = 'block';
+      if (authCodeMessage) authCodeMessage.textContent = `We sent a code to ${email}.`;
+    });
+  }
+
+  // Back Button in Step 2
+  if (btnBackStep1) {
+    btnBackStep1.addEventListener('click', () => {
+      if (authStep2) authStep2.style.display = 'none';
+      if (authStep1) authStep1.style.display = 'block';
+    });
+  }
+
+  // Avatar Selection
+  avatarOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      avatarOptions.forEach(opt => opt.classList.remove('active'));
+      option.classList.add('active');
+      selectedAvatar = option.dataset.avatar;
+    });
+  });
+
+  // Step 2 Submit: Finalize Login
+  if (authFormStep2) {
+    authFormStep2.addEventListener('submit', (e) => {
+      e.preventDefault();
+      completeLogin(selectedAvatar);
+      console.log('User logged in with email flow!');
+    });
+  }
+
   /* ──────────────────────────────────────────────────────────
      1. SPA PAGE SYSTEM & NAVIGATION
      ────────────────────────────────────────────────────────── */
@@ -247,6 +368,10 @@ document.addEventListener('DOMContentLoaded', () => {
       ratingDisplay.textContent = labels[rating] || `${rating} stars`;
     });
     star.addEventListener('click', e => {
+      if (!isLoggedIn) {
+        showAuthModal();
+        return;
+      }
       const rating = getRatingFromEvent(e, star);
       lockedRating = rating;
       isLocked = true;
@@ -318,6 +443,12 @@ document.addEventListener('DOMContentLoaded', () => {
       
       newBtn.addEventListener('click', e => {
         e.stopPropagation();
+        
+        if (!isLoggedIn) {
+          showAuthModal();
+          return;
+        }
+
         const bookId = newBtn.dataset.bookId;
         
         if (newBtn.textContent.includes('+')) {
