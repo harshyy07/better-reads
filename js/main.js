@@ -4,9 +4,58 @@
    Star Rating · Spoilers · Scroll Reveal · Animated Counters
    ============================================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
+const SUPABASE_URL = 'https://inxfcwugmhtgptmiygzq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlueGZjd3VnbWh0Z3B0bWl5Z3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MTIyMTAsImV4cCI6MjA5NzI4ODIxMH0.0k8hXWe4ZRbKEM5Y3nEthhodljktqbpd545hUCUhfMU';
+
+let supabaseClient = null;
+if (window.supabase) {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  console.warn("Supabase library failed to load. Authentication and database features will be disabled.");
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
 
   let isLoggedIn = false;
+  let currentUser = null;
+
+  // Check initial session
+  if (supabaseClient) {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        isLoggedIn = true;
+        currentUser = session.user;
+        // Fetch profile avatar
+        const { data: profile } = await supabaseClient.from('profiles').select('avatar').eq('id', currentUser.id).single();
+        if (profile && profile.avatar) {
+          completeLogin(profile.avatar);
+        } else {
+          showAuthStep(2); // Actually wait, showAuthStep might not be defined if hoisted improperly, but it's a function so it's fine.
+        }
+      }
+
+      // Listen for auth changes
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+          isLoggedIn = false;
+          currentUser = null;
+          const navAvatar = document.getElementById('nav-avatar');
+          const navGetStarted = document.getElementById('nav-get-started');
+          if (navAvatar) {
+            navAvatar.style.background = '';
+            navAvatar.title = 'Sign in';
+            navAvatar.textContent = '🌸';
+          }
+          if (navGetStarted) {
+            navGetStarted.style.display = 'inline-flex';
+          }
+        }
+      });
+    } catch (e) {
+      console.error("Error checking session:", e);
+    }
+  }
 
   /* ──────────────────────────────────────────────────────────
      AUTH MODAL LOGIC
@@ -90,9 +139,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Step 1 Submit: Send Email Code
   if (authFormStep1) {
-    authFormStep1.addEventListener('submit', (e) => {
+    authFormStep1.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = authEmailInput ? authEmailInput.value : 'your email';
+      const email = authEmailInput ? authEmailInput.value : '';
+      if (!email) return;
+
+      const submitBtn = authFormStep1.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Sending...';
+      submitBtn.disabled = true;
+      
+      if (!supabaseClient) {
+        alert("Authentication service is currently unavailable. Please check your connection or disable adblockers.");
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        return;
+      }
+      
+      const { error } = await supabaseClient.auth.signInWithOtp({ email });
+      
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
       
       // Transition to Step 2
       if (authStep1) authStep1.style.display = 'none';
@@ -120,10 +192,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Step 2 Submit: Finalize Login
   if (authFormStep2) {
-    authFormStep2.addEventListener('submit', (e) => {
+    authFormStep2.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const email = authEmailInput.value;
+      const code = document.getElementById('auth-code').value;
+      const username = document.getElementById('auth-username').value;
+      const password = document.getElementById('auth-password').value;
+
+      const submitBtn = authFormStep2.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Verifying...';
+      submitBtn.disabled = true;
+
+      // Verify OTP
+      const { data, error } = await supabaseClient.auth.verifyOtp({ email, token: code, type: 'email' });
+      
+      if (error) {
+        alert(error.message);
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        return;
+      }
+
+      currentUser = data.user;
+
+      // Optionally update password if provided
+      if (password) {
+        await supabaseClient.auth.updateUser({ password });
+      }
+
+      // Upsert profile
+      const { error: profileError } = await supabaseClient.from('profiles').upsert({
+        id: currentUser.id,
+        username: username,
+        avatar: selectedAvatar
+      });
+
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+
+      if (profileError) {
+        console.error("Error saving profile", profileError);
+      }
+
       completeLogin(selectedAvatar);
-      console.log('User logged in with email flow!');
+      console.log('User logged in and profile created with real email!');
     });
   }
 
@@ -255,29 +368,21 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ──────────────────────────────────────────────────────────
      4. SHELF TABS & HOTSPOTS
      ────────────────────────────────────────────────────────── */
-  const shelfTabs = document.querySelectorAll('.shelf-tab');
-  const bookshelves = document.querySelectorAll('.book-shelf');
+  const shelfModal = document.getElementById('shelf-modal');
+  const shelfModalClose = document.getElementById('shelf-close-btn');
+  const shelfModalTitle = document.getElementById('shelf-modal-title');
+  const bookshelves = document.querySelectorAll('#shelf-modal-body .book-shelf');
   const roomHotspots = document.querySelectorAll('.room-hotspot');
 
-  function activateShelf(shelfId) {
-    // Update tabs
-    shelfTabs.forEach(t => { 
-      t.classList.remove('active'); 
-      t.setAttribute('aria-selected', 'false'); 
-    });
-    const targetTab = document.querySelector(`.shelf-tab[data-shelf="${shelfId}"]`);
-    if (targetTab) {
-      targetTab.classList.add('active');
-      targetTab.setAttribute('aria-selected', 'true');
-    }
-
-    // Update shelves
+  function openShelfModal(shelfId, label) {
+    if (shelfModal) shelfModal.classList.add('active');
+    if (shelfModalTitle) shelfModalTitle.textContent = label;
+    
     bookshelves.forEach(s => s.classList.remove('active'));
     const targetShelf = document.getElementById(`shelf-${shelfId}`);
     if (targetShelf) {
       targetShelf.classList.add('active');
-      
-      // Stagger book cards in
+      // Animate cards
       const cards = targetShelf.querySelectorAll('.book-card');
       cards.forEach((card, i) => {
         card.style.opacity = '0';
@@ -286,23 +391,27 @@ document.addEventListener('DOMContentLoaded', () => {
           card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
           card.style.opacity = '1';
           card.style.transform = 'translateY(0)';
-        }, i * 60);
+        }, i * 40);
       });
     }
   }
 
-  shelfTabs.forEach(tab => {
-    tab.addEventListener('click', () => activateShelf(tab.dataset.shelf));
-  });
+  if (shelfModalClose) {
+    shelfModalClose.addEventListener('click', () => {
+      shelfModal.classList.remove('active');
+    });
+  }
+  
+  if (shelfModal) {
+    shelfModal.addEventListener('click', (e) => {
+      if (e.target === shelfModal) shelfModal.classList.remove('active');
+    });
+  }
 
   roomHotspots.forEach(hotspot => {
     hotspot.addEventListener('click', () => {
-      activateShelf(hotspot.dataset.shelf);
-      // Scroll to the shelf info so mobile users see the change
-      const libraryInfo = document.querySelector('.library-info');
-      if (libraryInfo && window.innerWidth < 992) {
-        libraryInfo.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      const label = hotspot.querySelector('.hotspot-label').textContent;
+      openShelfModal(hotspot.dataset.shelf, label);
     });
   });
 
@@ -863,13 +972,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         card.innerHTML = `
-          <div class="book-cover" style="${coverStyle}">${coverContent}</div>
+          <div class="book-cover" style="${coverStyle}; position: relative;">
+            ${coverContent}
+            <button class="remove-book-btn" style="position:absolute; top: -10px; right: -10px; width:26px; height:26px; border-radius:50%; background:var(--dusty-rose); color:white; border:none; cursor:pointer; font-weight:bold; font-size:18px; display:flex; align-items:center; justify-content:center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10;">&minus;</button>
+          </div>
           <div class="book-info">
             <div class="book-title">${book.title}</div>
             <div class="book-author">${book.authors[0] || 'Unknown'}</div>
             ${ratingHtml}
           </div>
         `;
+        
+        const removeBtn = card.querySelector('.remove-book-btn');
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const dbToUpdate = getDB();
+          let shelfArray = [];
+          if (shelfId === 'tbr') shelfArray = dbToUpdate.shelves.tbr;
+          if (shelfId === 'reading') shelfArray = dbToUpdate.shelves.reading;
+          if (shelfId === 'read') shelfArray = dbToUpdate.shelves.completed;
+          if (shelfId === 'dnf') shelfArray = dbToUpdate.shelves.dnf;
+          
+          if (shelfArray) {
+            const idx = shelfArray.indexOf(id);
+            if (idx > -1) {
+              shelfArray.splice(idx, 1);
+              saveDB(dbToUpdate);
+              renderLibraryBooks(); // Re-render to reflect changes
+            }
+          }
+        });
+
         grid.appendChild(card);
       });
     });

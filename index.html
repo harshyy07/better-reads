@@ -239,39 +239,8 @@
           
           <div class="library-main">
             <!-- Shelf Panel (Left Column) -->
-            <div class="library-info reveal reveal-delay-1">
-              <div class="section-label">Your Shelves</div>
-              <h3>Four shelves, zero judgement</h3>
-              <p>Track every book — even the ones you abandoned. The DNF shelf is a safe space. 🚫</p>
-
-              <div class="shelf-tabs" id="shelf-tabs" role="tablist">
-                <button class="shelf-tab active" id="tab-tbr" data-shelf="tbr" role="tab" aria-selected="true">🔖 TBR</button>
-                <button class="shelf-tab" id="tab-reading" data-shelf="reading" role="tab" aria-selected="false">📖 Reading</button>
-                <button class="shelf-tab" id="tab-read" data-shelf="read" role="tab" aria-selected="false">✅ Read</button>
-                <button class="shelf-tab" id="tab-dnf" data-shelf="dnf" role="tab" aria-selected="false">🚫 DNF</button>
-              </div>
-
-              <!-- TBR Shelf -->
-              <div class="book-shelf active" id="shelf-tbr">
-                <div class="book-grid">
-                </div>
-              </div>
-              <!-- Reading Shelf -->
-              <div class="book-shelf" id="shelf-reading">
-                <div class="book-grid">
-                </div>
-              </div>
-              <!-- Read Shelf -->
-              <div class="book-shelf" id="shelf-read">
-                <div class="book-grid">
-                </div>
-              </div>
-              <!-- DNF Shelf -->
-              <div class="book-shelf" id="shelf-dnf">
-                <div class="book-grid">
-                </div>
-              </div>
-            </div>
+            <!-- Left Column removed as requested -->
+            <div class="library-info-placeholder"></div>
             
             <!-- Spotify Widget (Right Column) -->
             <div class="spotify-float reveal reveal-delay-2">
@@ -583,6 +552,39 @@
   </div>
 
   <!-- ========================================================
+       SHELF MODAL
+       ======================================================== -->
+  <div class="auth-modal-overlay" id="shelf-modal">
+    <div class="auth-modal-content" style="max-width: 800px; width: 95%; max-height: 85vh; overflow-y: auto;">
+      <button class="auth-close-btn" id="shelf-close-btn" aria-label="Close modal">✕</button>
+      
+      <div class="auth-modal-header" style="margin-bottom: 2rem;">
+        <div class="auth-modal-icon" id="shelf-modal-icon">📚</div>
+        <h3 class="auth-modal-title" id="shelf-modal-title">Your Shelf</h3>
+      </div>
+      
+      <div id="shelf-modal-body">
+        <!-- TBR Shelf -->
+        <div class="book-shelf active" id="shelf-tbr">
+          <div class="book-grid"></div>
+        </div>
+        <!-- Reading Shelf -->
+        <div class="book-shelf" id="shelf-reading">
+          <div class="book-grid"></div>
+        </div>
+        <!-- Read Shelf -->
+        <div class="book-shelf" id="shelf-read">
+          <div class="book-grid"></div>
+        </div>
+        <!-- DNF Shelf -->
+        <div class="book-shelf" id="shelf-dnf">
+          <div class="book-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
        AUTH MODAL
        ======================================================== -->
   <div class="auth-modal-overlay" id="auth-modal">
@@ -655,6 +657,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/main.js"></script>
 </body>
 
