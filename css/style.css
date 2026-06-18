@@ -8,20 +8,20 @@
 
 /* === CSS Variables === */
 :root {
-  --cream: #FFF8F0;
-  --blush: #FADADD;
-  --sage: #C8DFC8;
-  --lavender: #DDD5F3;
-  --peach: #FECBA1;
-  --dusty-rose: #E8A598;
-  --ink: #3B2F2F;
-  --ink-light: #6B5252;
-  --warm-white: #FFFDF8;
-  --amber: #F5A623;
-  --amber-glow: rgba(245, 166, 35, 0.15);
-  --shadow-soft: 0 4px 24px rgba(59, 47, 47, 0.06);
-  --shadow-med: 0 8px 40px rgba(59, 47, 47, 0.10);
-  --shadow-warm: 0 8px 32px rgba(232, 165, 152, 0.25);
+  --cream: #fdf5f8;
+  --blush: #f8c8dc;
+  --sage: #f2e1ed;
+  --lavender: #d8c3e8;
+  --peach: #eebfdd;
+  --dusty-rose: #d69db4;
+  --ink: #3b2834;
+  --ink-light: #705868;
+  --warm-white: #ffffff;
+  --amber: #cca9dd;
+  --amber-glow: rgba(204, 169, 221, 0.15);
+  --shadow-soft: 0 4px 24px rgba(59, 40, 52, 0.06);
+  --shadow-med: 0 8px 40px rgba(59, 40, 52, 0.10);
+  --shadow-warm: 0 8px 32px rgba(216, 195, 232, 0.25);
   --radius-sm: 12px;
   --radius-md: 20px;
   --radius-lg: 28px;

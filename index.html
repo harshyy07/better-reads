@@ -209,21 +209,17 @@
         <div class="fireplace-glow" id="fireplace-glow"></div>
         <!-- Interactive Room Hotspots -->
         <div class="library-hotspots">
-          <button class="room-hotspot hotspot-tbr" data-shelf="tbr" title="Click to view To-Be-Read shelf">
-            <span class="hotspot-icon">🔖</span>
-            <span class="hotspot-label">TBR Bookshelf</span>
+          <button class="room-hotspot hotspot-tbr" data-shelf="tbr" title="Click to view To-Be-Read shelf" style="background: none; border: none; padding: 0; box-shadow: none; transition: transform 0.2s; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); transform: rotate(-3deg);" onmouseover="this.style.transform='rotate(-3deg) translateY(-2px)'" onmouseout="this.style.transform='rotate(-3deg) translateY(0)'">
+            <img src="assets/btn_tbr.png" alt="TBR Bookshelf" style="height: 60px; object-fit: contain;">
           </button>
-          <button class="room-hotspot hotspot-reading" data-shelf="reading" title="Click to view Currently Reading shelf">
-            <span class="hotspot-icon">📖</span>
-            <span class="hotspot-label">Reading Chair</span>
+          <button class="room-hotspot hotspot-reading" data-shelf="reading" title="Click to view Currently Reading shelf" style="background: none; border: none; padding: 0; box-shadow: none; transition: transform 0.2s; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <img src="assets/btn_read.png" alt="Reading Chair" style="height: 60px; object-fit: contain;">
           </button>
-          <button class="room-hotspot hotspot-read" data-shelf="read" title="Click to view Read shelf">
-            <span class="hotspot-icon">✅</span>
-            <span class="hotspot-label">Completed Archive</span>
+          <button class="room-hotspot hotspot-read" data-shelf="read" title="Click to view Read shelf" style="background: none; border: none; padding: 0; box-shadow: none; transition: transform 0.2s; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <img src="assets/btn_read.png" alt="Completed Archive" style="height: 60px; object-fit: contain; filter: grayscale(50%);">
           </button>
-          <button class="room-hotspot hotspot-dnf" data-shelf="dnf" title="Click to view Did-Not-Finish shelf">
-            <span class="hotspot-icon">🚫</span>
-            <span class="hotspot-label">DNF Cabinet</span>
+          <button class="room-hotspot hotspot-dnf" data-shelf="dnf" title="Click to view Did-Not-Finish shelf" style="background: none; border: none; padding: 0; box-shadow: none; transition: transform 0.2s; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <img src="assets/btn_dnf.png" alt="DNF Cabinet" style="height: 60px; object-fit: contain;">
           </button>
         </div>
       </div>

@@ -74,22 +74,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const authCodeMessage = document.getElementById('auth-code-message');
   const avatarOptions = document.querySelectorAll('.avatar-option');
   let selectedAvatar = '🍵';
-  
+
   function showAuthModal() {
     if (authModal) authModal.classList.add('active');
     // Reset to step 1
     if (authStep1) authStep1.style.display = 'block';
     if (authStep2) authStep2.style.display = 'none';
   }
-  
+
   function closeAuthModal() {
     if (authModal) authModal.classList.remove('active');
   }
-  
+
   function completeLogin(avatarOrText) {
     isLoggedIn = true;
     closeAuthModal();
-    
+
     // Update UI to reflect logged-in state
     if (navAvatar) {
       navAvatar.style.background = 'var(--sage)';
@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (authCloseBtn) {
     authCloseBtn.addEventListener('click', closeAuthModal);
   }
-  
+
   if (authModal) {
     authModal.addEventListener('click', (e) => {
       if (e.target === authModal) closeAuthModal();
@@ -148,16 +148,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const originalText = submitBtn.textContent;
       submitBtn.textContent = 'Sending...';
       submitBtn.disabled = true;
-      
+
       if (!supabaseClient) {
         alert("Authentication service is currently unavailable. Please check your connection or disable adblockers.");
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
         return;
       }
-      
+
       const { error } = await supabaseClient.auth.signInWithOtp({ email });
-      
+
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
 
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert(error.message);
         return;
       }
-      
+
       // Transition to Step 2
       if (authStep1) authStep1.style.display = 'none';
       if (authStep2) authStep2.style.display = 'block';
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Verify OTP
       const { data, error } = await supabaseClient.auth.verifyOtp({ email, token: code, type: 'email' });
-      
+
       if (error) {
         alert(error.message);
         submitBtn.textContent = originalText;
@@ -244,10 +244,11 @@ document.addEventListener('DOMContentLoaded', async () => {
      1. SPA PAGE SYSTEM & NAVIGATION
      ────────────────────────────────────────────────────────── */
   const navbar = document.getElementById('navbar');
-  
+
   const pages = {
     '': 'page-home',
     '#': 'page-home',
+    '#home': 'page-home',
     '#hero': 'page-home',
     '#discover': 'page-discover',
     '#library': 'page-library',
@@ -258,7 +259,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const navLinksMap = {
-    'page-home': '',
+    'page-home': 'nav-home',
     'page-discover': 'nav-discover',
     'page-library': 'nav-library',
     'page-discourse': 'nav-discourse',
@@ -266,26 +267,36 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   function showPage(hash, scrollTargetId = null) {
-    const targetPageId = pages[hash] || 'page-home';
-    
+    let targetPageId = pages[hash] || 'page-home';
+    let bookIdToRender = null;
+
+    if (hash && hash.startsWith('#book-')) {
+      targetPageId = 'page-book-details';
+      bookIdToRender = hash.replace('#book-', '');
+    }
+
     // Hide mobile menu if open
     navbar.classList.remove('nav-open');
-    
+
     // Deactivate all page sections
     document.querySelectorAll('.page-section').forEach(section => {
       section.classList.remove('active');
     });
-    
+
     // Activate target page section
     const targetPage = document.getElementById(targetPageId);
     if (targetPage) {
       targetPage.classList.add('active');
       targetPage.scrollTop = 0;
-      
+
       // Update scrolled navbar class on page activation
       navbar.classList.toggle('scrolled', targetPage.scrollTop > 40);
+
+      if (bookIdToRender) {
+        renderBookDetails(bookIdToRender);
+      }
     }
-    
+
     // Update active state on navbar links
     document.querySelectorAll('.nav-links a').forEach(a => {
       a.classList.remove('nav-active');
@@ -295,7 +306,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const activeNavLink = document.getElementById(activeNavLinkId);
       if (activeNavLink) activeNavLink.classList.add('nav-active');
     }
-    
+
     // Handle scrolling to inner targets (like #cta)
     if (scrollTargetId) {
       const scrollTarget = document.getElementById(scrollTargetId);
@@ -319,13 +330,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     a.addEventListener('click', e => {
       const href = a.getAttribute('href');
       e.preventDefault();
-      
+
       if (href === '#') {
         showPage('#');
         window.location.hash = '#';
       } else if (href === '#cta') {
         showPage('#cta');
         window.location.hash = '#cta';
+      } else if (href && href.startsWith('#book-')) {
+        showPage(href);
+        window.location.hash = href;
       } else {
         showPage(href);
         window.location.hash = href;
@@ -377,7 +391,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function openShelfModal(shelfId, label) {
     if (shelfModal) shelfModal.classList.add('active');
     if (shelfModalTitle) shelfModalTitle.textContent = label;
-    
+
     bookshelves.forEach(s => s.classList.remove('active'));
     const targetShelf = document.getElementById(`shelf-${shelfId}`);
     if (targetShelf) {
@@ -401,7 +415,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       shelfModal.classList.remove('active');
     });
   }
-  
+
   if (shelfModal) {
     shelfModal.addEventListener('click', (e) => {
       if (e.target === shelfModal) shelfModal.classList.remove('active');
@@ -410,7 +424,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   roomHotspots.forEach(hotspot => {
     hotspot.addEventListener('click', () => {
-      const label = hotspot.querySelector('.hotspot-label').textContent;
+      let label = 'Bookshelf';
+      const labelSpan = hotspot.querySelector('.hotspot-label');
+      if (labelSpan) {
+        label = labelSpan.textContent;
+      } else {
+        const img = hotspot.querySelector('img');
+        if (img) label = img.alt;
+      }
       openShelfModal(hotspot.dataset.shelf, label);
     });
   });
@@ -426,15 +447,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const labels = {
     0.5: '0.5 — Did Not Like It 😬',
-    1:   '1.0 — Did Not Like It 😞',
+    1: '1.0 — Did Not Like It 😞',
     1.5: '1.5 — It Was OK 🙁',
-    2:   '2.0 — It Was OK 😐',
+    2: '2.0 — It Was OK 😐',
     2.5: '2.5 — Liked It 🙂',
-    3:   '3.0 — Liked It 😊',
+    3: '3.0 — Liked It 😊',
     3.5: '3.5 — Really Liked It 😄',
-    4:   '4.0 — Really Liked It 😍',
+    4: '4.0 — Really Liked It 😍',
     4.5: '4.5 — Loved It 🤩',
-    5:   '5.0 — It Was Amazing ✨',
+    5: '5.0 — It Was Amazing ✨',
   };
 
   function renderStars(value) {
@@ -527,7 +548,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.genre-pill').forEach(pill => {
     pill.addEventListener('click', () => {
       document.querySelectorAll('.genre-pill').forEach(p => p.classList.remove('active'));
-      
+
       // Toggle logic
       if (activeDiscoverGenre === pill.dataset.genre) {
         activeDiscoverGenre = ''; // Deselect
@@ -535,7 +556,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         pill.classList.add('active');
         activeDiscoverGenre = pill.dataset.genre;
       }
-      
+
       renderDiscoverBooks();
     });
   });
@@ -549,22 +570,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Remove old listeners by cloning
       const newBtn = btn.cloneNode(true);
       btn.parentNode.replaceChild(newBtn, btn);
-      
+
       newBtn.addEventListener('click', e => {
         e.stopPropagation();
-        
+
         if (!isLoggedIn) {
           showAuthModal();
           return;
         }
 
         const bookId = newBtn.dataset.bookId;
-        
+
         if (newBtn.textContent.includes('+')) {
           newBtn.textContent = '✓ Added!';
           newBtn.style.background = 'var(--sage)';
           newBtn.style.color = '#2d5a2d';
-          
+
           // Add to DB TBR shelf
           if (bookId) {
             const db = getDB();
@@ -606,11 +627,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let currentTrackIdx = 0;
   let isPlaying = false;
-  
+
   // Create the actual hidden HTML5 audio player
   const bgAudio = new Audio();
   bgAudio.src = playlistTracks[currentTrackIdx].src;
-  
+
   function updateSpotifyUI() {
     const track = playlistTracks[currentTrackIdx];
     if (trackNameEl) trackNameEl.textContent = track.name;
@@ -641,7 +662,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     isPlaying = true;
     if (playBtn) playBtn.textContent = '⏸';
     updateSpotifyUI();
-    
+
     clearInterval(spotifyInterval);
     spotifyInterval = setInterval(() => {
       if (currentElapsedSecs < playlistTracks[currentTrackIdx].durationSec) {
@@ -743,8 +764,8 @@ document.addEventListener('DOMContentLoaded', async () => {
      11. ANIMATED COUNTER (Hero stats)
      ────────────────────────────────────────────────────────── */
   const counters = [
-    { el: document.getElementById('stat-books'),   target: 120, suffix: 'k+' },
-    { el: document.getElementById('stat-readers'), target: 48,  suffix: 'k+' },
+    { el: document.getElementById('stat-books'), target: 120, suffix: 'k+' },
+    { el: document.getElementById('stat-readers'), target: 48, suffix: 'k+' },
     { el: document.getElementById('stat-reviews'), target: 310, suffix: 'k+' },
   ];
 
@@ -806,7 +827,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dbData) {
       try {
         return JSON.parse(dbData);
-      } catch(e) {
+      } catch (e) {
         console.error("Error parsing DB", e);
       }
     }
@@ -816,7 +837,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         tbr: [],
         reading: [],
         completed: []
-      }
+      },
+      reviews: {}, // key: book id, value: array of review objects
+      userRatings: {} // key: book id, value: numeric rating
     };
   }
 
@@ -872,7 +895,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function initDatabase() {
     let db = getDB();
-    
+
     // Purge any existing books from the local database that don't have a thumbnail
     let purged = false;
     Object.keys(db.books).forEach(id => {
@@ -887,7 +910,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         purged = true;
       }
     });
-    
+
     if (purged) {
       saveDB(db);
     }
@@ -895,7 +918,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // If we have no books at all, let's fetch some from the API to seed the library
     if (Object.keys(db.books).length === 0) {
       console.log('Initializing BetterReads database with API books...');
-      
+
       const tbrIds = await fetchAndCacheBooks(['fantasy'], 0, true);
       const readingIds = await fetchAndCacheBooks(['romance'], 0, true);
       const completedIds = await fetchAndCacheBooks(['science fiction'], 0, true);
@@ -908,9 +931,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       console.log('Database already initialized with', Object.keys(db.books).length, 'books.');
     }
-    
+
     // Once DB is initialized, we can trigger rendering
     renderLibraryBooks();
+    renderHeroSlider();
     document.dispatchEvent(new Event('betterreads-db-ready'));
   }
 
@@ -937,10 +961,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     Object.keys(shelfMappings).forEach(shelfId => {
       const shelfContainer = document.getElementById(`shelf-${shelfId}`);
       if (!shelfContainer) return;
-      
+
       const grid = shelfContainer.querySelector('.book-grid');
       if (!grid) return;
-      
+
       grid.innerHTML = ''; // Clear existing static cards
 
       const bookIds = shelfMappings[shelfId];
@@ -982,7 +1006,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             ${ratingHtml}
           </div>
         `;
-        
+
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('button')) return; // Ignore button clicks
+          window.location.hash = `#book-${book.id}`;
+        });
+
         const removeBtn = card.querySelector('.remove-book-btn');
         removeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -992,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (shelfId === 'reading') shelfArray = dbToUpdate.shelves.reading;
           if (shelfId === 'read') shelfArray = dbToUpdate.shelves.completed;
           if (shelfId === 'dnf') shelfArray = dbToUpdate.shelves.dnf;
-          
+
           if (shelfArray) {
             const idx = shelfArray.indexOf(id);
             if (idx > -1) {
@@ -1009,11 +1038,173 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ──────────────────────────────────────────────────────────
+     14.5 BOOK DETAILS & REVIEWS
+     ────────────────────────────────────────────────────────── */
+  let currentBookIdForDetails = null;
+
+  function renderBookDetails(bookId) {
+    const db = getDB();
+    const book = db.books[bookId];
+    if (!book) return;
+
+    currentBookIdForDetails = bookId;
+
+    // Header info
+    const coverEl = document.getElementById('bd-cover');
+    if (book.thumbnail) {
+      coverEl.style.background = `url('${book.thumbnail}') center/cover`;
+      coverEl.innerHTML = '';
+    } else {
+      coverEl.style.background = getGradientFromString(book.title);
+      coverEl.innerHTML = book.title.charAt(0);
+    }
+
+    document.getElementById('bd-title').textContent = book.title;
+    document.getElementById('bd-author').textContent = book.authors[0] || 'Unknown Author';
+    document.getElementById('bd-category').textContent = book.categories && book.categories.length > 0 ? book.categories[0] : 'Fiction';
+    document.getElementById('bd-description').textContent = book.description || 'No description available for this book.';
+
+    // Setup Rating
+    const userRating = db.userRatings ? db.userRatings[bookId] : null;
+    const stars = document.querySelectorAll('#bd-star-widget .star');
+    const ratingDisplay = document.getElementById('bd-rating-display');
+
+    function updateStarsUI(rating) {
+      stars.forEach(s => {
+        if (parseInt(s.dataset.value) <= rating) {
+          s.classList.add('active');
+          s.style.color = 'var(--amber)';
+        } else {
+          s.classList.remove('active');
+          s.style.color = '#ccc';
+        }
+      });
+      ratingDisplay.textContent = rating ? `You rated this ${rating} star${rating > 1 ? 's' : ''}` : 'Hover to rate ✦';
+    }
+
+    updateStarsUI(userRating || 0);
+
+    stars.forEach(star => {
+      star.onclick = () => {
+        const val = parseInt(star.dataset.value);
+        const currentDb = getDB();
+        if (!currentDb.userRatings) currentDb.userRatings = {};
+        currentDb.userRatings[bookId] = val;
+        saveDB(currentDb);
+        updateStarsUI(val);
+      };
+      star.onmouseenter = () => updateStarsUI(parseInt(star.dataset.value));
+      star.onmouseleave = () => {
+        const currentDb = getDB();
+        updateStarsUI(currentDb.userRatings ? currentDb.userRatings[bookId] || 0 : 0);
+      };
+    });
+
+    // Render Reviews
+    renderReviews(bookId);
+  }
+
+  function renderReviews(bookId) {
+    const db = getDB();
+    const reviews = (db.reviews && db.reviews[bookId]) ? db.reviews[bookId] : [];
+    const listEl = document.getElementById('reviews-list');
+    listEl.innerHTML = '';
+
+    if (reviews.length === 0) {
+      listEl.innerHTML = '<p style="color: var(--ink-light); text-align: center; margin-top: 2rem;">No reviews yet. Be the first to share your thoughts!</p>';
+      return;
+    }
+
+    reviews.forEach((rev, index) => {
+      const card = document.createElement('div');
+      card.className = 'review-card';
+
+      let repliesHtml = '';
+      if (rev.replies && rev.replies.length > 0) {
+        repliesHtml = '<div class="reply-list">';
+        rev.replies.forEach(reply => {
+          repliesHtml += `
+            <div class="reply-card">
+              <div class="review-author" style="font-size: 0.85rem;">${reply.author}</div>
+              <div class="review-content" style="font-size: 0.85rem; margin-bottom: 0;">${reply.content}</div>
+            </div>
+          `;
+        });
+        repliesHtml += '</div>';
+      }
+
+      card.innerHTML = `
+        <div class="review-header">
+          <div class="review-avatar">${rev.author.charAt(0)}</div>
+          <div class="review-meta">
+            <div class="review-author">${rev.author}</div>
+            <div class="review-date">${new Date(rev.date).toLocaleDateString()}</div>
+          </div>
+        </div>
+        <div class="review-content">${rev.content}</div>
+        <div class="review-actions">
+          <button class="btn-reply" onclick="document.getElementById('reply-box-${index}').classList.toggle('active')">Reply</button>
+        </div>
+        ${repliesHtml}
+        <div class="reply-input-box" id="reply-box-${index}">
+          <div style="display:flex; gap:0.5rem;">
+            <input type="text" id="reply-input-${index}" placeholder="Write a reply..." style="flex:1; padding:0.5rem; border:1px solid #eee; border-radius:4px; font-family:'DM Sans', sans-serif;">
+            <button class="btn btn-secondary" onclick="postReply('${bookId}', ${index})" style="padding:0.5rem 1rem;">Post</button>
+          </div>
+        </div>
+      `;
+      listEl.appendChild(card);
+    });
+  }
+
+  // Expose postReply to window so inline onclick works
+  window.postReply = function (bookId, reviewIndex) {
+    const input = document.getElementById(`reply-input-${reviewIndex}`);
+    if (!input || !input.value.trim()) return;
+
+    const db = getDB();
+    if (!db.reviews || !db.reviews[bookId]) return;
+
+    if (!db.reviews[bookId][reviewIndex].replies) {
+      db.reviews[bookId][reviewIndex].replies = [];
+    }
+
+    db.reviews[bookId][reviewIndex].replies.push({
+      author: 'You',
+      content: input.value.trim(),
+      date: new Date().toISOString()
+    });
+
+    saveDB(db);
+    renderReviews(bookId);
+  };
+
+  document.getElementById('btn-post-review')?.addEventListener('click', () => {
+    const content = document.getElementById('new-review-content').value.trim();
+    if (!content || !currentBookIdForDetails) return;
+
+    const db = getDB();
+    if (!db.reviews) db.reviews = {};
+    if (!db.reviews[currentBookIdForDetails]) db.reviews[currentBookIdForDetails] = [];
+
+    db.reviews[currentBookIdForDetails].unshift({
+      author: 'You',
+      content: content,
+      date: new Date().toISOString(),
+      replies: []
+    });
+
+    saveDB(db);
+    document.getElementById('new-review-content').value = '';
+    renderReviews(currentBookIdForDetails);
+  });
+
+  /* ──────────────────────────────────────────────────────────
      15. DISCOVER SEARCH & RENDERING (Vast Selection)
      ────────────────────────────────────────────────────────── */
   const discoverSearchInput = document.getElementById('discover-search');
   const discoverGrid = document.getElementById('discover-books-grid');
-  
+
   // Create an invisible scroll trigger at the bottom of the grid
   const scrollTrigger = document.createElement('div');
   scrollTrigger.id = 'discover-scroll-trigger';
@@ -1030,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function performDiscoverFetch(isLoadMore = false) {
     if (!discoverGrid) return;
-    
+
     if (!isLoadMore) {
       discoverStartIndex = 0;
       currentDiscoverIds = [];
@@ -1054,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Filter out books we already have in the current view to avoid duplicates
     let uniqueNewIds = isLoadMore ? newIds.filter(id => !currentDiscoverIds.includes(id)) : newIds;
     currentDiscoverIds = isLoadMore ? currentDiscoverIds.concat(uniqueNewIds) : uniqueNewIds;
-    
+
     if (currentDiscoverIds.length === 0) {
       discoverGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--ink-light); padding: 2rem;">No books found. Try searching for something else!</div>`;
       scrollTrigger.style.display = 'none';
@@ -1073,7 +1264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const card = document.createElement('div');
       card.className = 'discover-book-card';
-      
+
       let coverStyle = `background: ${getGradientFromString(book.title)}`;
       let coverContent = book.title.charAt(0);
       if (book.thumbnail) {
@@ -1103,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
         </div>
       `;
-      
+
       // Re-apply 3D tilt
       card.addEventListener('mousemove', e => {
         const rect = card.getBoundingClientRect();
@@ -1114,6 +1305,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       card.addEventListener('mouseleave', () => {
         card.style.transform = '';
+      });
+
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return; // Ignore button clicks
+        window.location.hash = `#book-${book.id}`;
       });
 
       discoverGrid.appendChild(card);
@@ -1129,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const q = e.target.value.trim();
       discoverSearchQuery = q;
       if (q.length > 0) activeDiscoverGenre = ''; // Clear genre if searching
-      
+
       if (searchTimeout) clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
         // Deselect genre pills visually
@@ -1149,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.querySelectorAll('.genre-pill').forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       activeDiscoverGenre = pill.dataset.genre;
-      
+
       performDiscoverFetch();
     });
   });
@@ -1205,7 +1401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function getDiscourse() { return JSON.parse(localStorage.getItem(DISCOURSE_DB_KEY)); }
   function saveDiscourse(data) { localStorage.setItem(DISCOURSE_DB_KEY, JSON.stringify(data)); }
-  
+
   function getClubs() { return JSON.parse(localStorage.getItem(CLUBS_DB_KEY)); }
   function saveClubs(data) { localStorage.setItem(CLUBS_DB_KEY, JSON.stringify(data)); }
 
@@ -1287,7 +1483,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const title = document.getElementById('new-thread-title').value.trim();
       const content = document.getElementById('new-thread-content').value.trim();
       const tag = document.getElementById('new-thread-tag').value;
-      
+
       if (!title || !content) {
         alert('Please fill out both title and content!');
         return;
@@ -1307,7 +1503,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         replies: 0
       });
       saveDiscourse(db);
-      
+
       document.getElementById('new-thread-title').value = '';
       document.getElementById('new-thread-content').value = '';
       renderDiscourse();
@@ -1371,7 +1567,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnCreateClub.addEventListener('click', () => {
       const name = document.getElementById('new-club-name').value.trim();
       const desc = document.getElementById('new-club-desc').value.trim();
-      
+
       if (!name || !desc) {
         alert('Please provide a club name and description.');
         return;
@@ -1387,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       saveClubs(db);
       localStorage.setItem('joined_club_' + newId, 'true');
-      
+
       document.getElementById('new-club-name').value = '';
       document.getElementById('new-club-desc').value = '';
       renderClubs();
@@ -1395,6 +1591,72 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Start initialization
+
+  async function renderHeroSlider() {
+    const track = document.getElementById('hero-slider-track');
+    if (!track) return;
+
+    // Fetch a few interesting books for the hero
+    const sliderBooks = await fetchAndCacheBooks(['bestsellers', 'classics'], 0, false);
+    const db = getDB();
+
+    track.innerHTML = '';
+    if (sliderBooks.length === 0) return;
+
+    // Duplicate the books array to allow for a seamless infinite scroll
+    const displayIds = [...sliderBooks, ...sliderBooks, ...sliderBooks];
+
+    displayIds.forEach(id => {
+      const book = db.books[id];
+      if (!book) return;
+
+      const card = document.createElement('div');
+      card.className = 'hero-slider-book';
+
+      const coverStyle = book.thumbnail
+        ? `background: url('${book.thumbnail}') center/cover;`
+        : `background: ${getGradientFromString(book.title)};`;
+      const coverContent = book.thumbnail ? '' : `<div style="padding: 1rem; color: white; text-align: center; font-weight: bold; font-size: 0.8rem; line-height: 1.2;">${book.title}</div>`;
+
+      card.innerHTML = `
+        <div class="dbc-cover" style="${coverStyle}">
+          ${coverContent}
+        </div>
+      `;
+
+      card.addEventListener('click', () => {
+        window.location.hash = `#book-${book.id}`;
+      });
+
+      track.appendChild(card);
+    });
+  }
+
+  const heroSearchBtn = document.getElementById('hero-search-btn');
+  const heroSearchInput = document.getElementById('hero-search-input');
+
+  if (heroSearchBtn && heroSearchInput) {
+    heroSearchBtn.addEventListener('click', () => {
+      const q = heroSearchInput.value.trim();
+      if (q) {
+        discoverSearchQuery = q;
+        const discoverInput = document.getElementById('discover-search');
+        if (discoverInput) discoverInput.value = q;
+
+        window.location.hash = '#discover';
+
+        // Let the page transition happen, then fetch
+        setTimeout(() => {
+          performDiscoverFetch();
+        }, 300);
+      }
+    });
+
+    heroSearchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') heroSearchBtn.click();
+    });
+  }
+
   initDatabase();
 
 });
