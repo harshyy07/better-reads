@@ -616,13 +616,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const timeDurEl = document.getElementById('sp-time-dur');
   const progressFill = document.getElementById('sp-bar-fill');
   const albumArt = document.querySelector('.spotify-album-art');
+  const spLoginBtn = document.getElementById('sp-login-btn');
+
+  // Hide the login CTA since we're using a simulated local player
+  const loginCta = document.querySelector('.spotify-login-cta');
+  if (loginCta) loginCta.style.display = 'none';
 
   // Real royalty-free ambient/classical tracks hosted publicly
   const playlistTracks = [
-    { name: 'Luminous Rain', artist: 'Kevin MacLeod', src: 'https://upload.wikimedia.org/wikipedia/commons/2/23/Kevin_MacLeod_-_Luminous_Rain.ogg' },
-    { name: 'Gymnopédie No. 1', artist: 'Kevin MacLeod', src: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Gymnop%C3%A9die_No._1_%28Kevin_MacLeod%29.ogg' },
-    { name: 'Canon in D Major', artist: 'Johann Pachelbel', src: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Pachelbel_-_Canon_in_D_Major.ogg' },
-    { name: 'Moonlight Sonata', artist: 'Ludwig van Beethoven', src: 'https://upload.wikimedia.org/wikipedia/commons/a/af/Beethoven_Moonlight_Sonata.ogg' }
+    { name: 'Acoustic Rain', artist: 'SoundHelix', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+    { name: 'Midnight Study', artist: 'SoundHelix', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+    { name: 'Coffee Shop Jazz', artist: 'SoundHelix', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+    { name: 'Lofi Library', artist: 'SoundHelix', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' }
   ];
 
   let currentTrackIdx = 0;
@@ -631,6 +636,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Create the actual hidden HTML5 audio player
   const bgAudio = new Audio();
   bgAudio.src = playlistTracks[currentTrackIdx].src;
+
+  function formatSecs(secs) {
+    if (isNaN(secs)) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
 
   function updateSpotifyUI() {
     const track = playlistTracks[currentTrackIdx];
@@ -650,59 +662,63 @@ document.addEventListener('DOMContentLoaded', async () => {
         albumArt.style.animation = 'none';
       }
     }
-  }
-
-  function formatSecs(secs) {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+    
+    if (playBtn) playBtn.textContent = isPlaying ? '⏸' : '▶️';
   }
 
   function playSpotifyTrack() {
-    isPlaying = true;
-    if (playBtn) playBtn.textContent = '⏸';
-    updateSpotifyUI();
-
-    clearInterval(spotifyInterval);
-    spotifyInterval = setInterval(() => {
-      if (currentElapsedSecs < playlistTracks[currentTrackIdx].durationSec) {
-        currentElapsedSecs++;
-        if (timeCurEl) timeCurEl.textContent = formatSecs(currentElapsedSecs);
-        if (progressFill) {
-          progressFill.style.width = `${(currentElapsedSecs / playlistTracks[currentTrackIdx].durationSec) * 100}%`;
-        }
-      } else {
-        nextSpotifyTrack();
-      }
-    }, 1000);
+    if (bgAudio.src !== playlistTracks[currentTrackIdx].src) {
+      bgAudio.src = playlistTracks[currentTrackIdx].src;
+    }
+    bgAudio.play().then(() => {
+      isPlaying = true;
+      updateSpotifyUI();
+    }).catch(err => {
+      console.warn("Audio playback blocked by browser:", err);
+      isPlaying = false;
+      updateSpotifyUI();
+    });
   }
 
   function pauseSpotifyTrack() {
+    bgAudio.pause();
     isPlaying = false;
-    if (playBtn) playBtn.textContent = '▶️';
-    clearInterval(spotifyInterval);
     updateSpotifyUI();
   }
 
   function nextSpotifyTrack() {
     currentTrackIdx = (currentTrackIdx + 1) % playlistTracks.length;
-    currentElapsedSecs = 0;
     if (isPlaying) {
       playSpotifyTrack();
     } else {
+      bgAudio.src = playlistTracks[currentTrackIdx].src;
       updateSpotifyUI();
     }
   }
 
   function prevSpotifyTrack() {
     currentTrackIdx = (currentTrackIdx - 1 + playlistTracks.length) % playlistTracks.length;
-    currentElapsedSecs = 0;
     if (isPlaying) {
       playSpotifyTrack();
     } else {
+      bgAudio.src = playlistTracks[currentTrackIdx].src;
       updateSpotifyUI();
     }
   }
+
+  // Audio Event Listeners
+  bgAudio.addEventListener('loadedmetadata', () => {
+    if (timeDurEl) timeDurEl.textContent = formatSecs(bgAudio.duration);
+  });
+
+  bgAudio.addEventListener('timeupdate', () => {
+    if (timeCurEl) timeCurEl.textContent = formatSecs(bgAudio.currentTime);
+    if (progressFill && bgAudio.duration) {
+      progressFill.style.width = `${(bgAudio.currentTime / bgAudio.duration) * 100}%`;
+    }
+  });
+
+  bgAudio.addEventListener('ended', nextSpotifyTrack);
 
   if (playBtn) {
     playBtn.addEventListener('click', () => {
@@ -724,7 +740,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   trackItems.forEach((item, idx) => {
     item.addEventListener('click', () => {
       currentTrackIdx = idx;
-      currentElapsedSecs = 0;
       playSpotifyTrack();
     });
   });
@@ -733,11 +748,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const progressTrack = document.getElementById('sp-progress-track');
   if (progressTrack) {
     progressTrack.addEventListener('click', e => {
+      if (!bgAudio.duration) return;
       const rect = progressTrack.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
-      const percentage = clickX / rect.width;
-      currentElapsedSecs = Math.floor(percentage * playlistTracks[currentTrackIdx].durationSec);
-      updateSpotifyUI();
+      const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+      bgAudio.currentTime = percentage * bgAudio.duration;
     });
   }
 
