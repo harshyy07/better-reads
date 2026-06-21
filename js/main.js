@@ -1052,17 +1052,57 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  
+
   /* ──────────────────────────────────────────────────────────
-     14.5 BOOK DETAILS & REVIEWS
+     14.5 BOOK DETAILS & REVIEWS (REPLACED DYNAMIC VERSION)
      ────────────────────────────────────────────────────────── */
   let currentBookIdForDetails = null;
 
-  function renderBookDetails(bookId) {
-    const db = getDB();
-    const book = db.books[bookId];
-    if (!book) return;
+  async function fetchOpenLibraryBook(bookId) {
+    try {
+      const db = getDB();
+      if (db.books && db.books[bookId]) {
+        return db.books[bookId];
+      }
+      // Fetch dynamically
+      const res = await fetch(`https://openlibrary.org/search.json?q=${bookId}`);
+      const data = await res.json();
+      if (data.docs && data.docs.length > 0) {
+        const doc = data.docs[0];
+        const newBook = {
+          title: doc.title,
+          authors: doc.author_name || ['Unknown'],
+          categories: doc.subject || ['Fiction'],
+          description: `First published in ${doc.first_publish_year}. An intriguing book about ${doc.subject ? doc.subject.slice(0,3).join(', ') : 'various topics'}.`,
+          thumbnail: `https://covers.openlibrary.org/b/id/${bookId}-L.jpg`
+        };
+        if (!db.books) db.books = {};
+        db.books[bookId] = newBook;
+        saveDB(db);
+        return newBook;
+      }
+    } catch(e) {
+      console.error(e);
+    }
+    return {
+      title: "Unknown Book",
+      authors: ["Unknown"],
+      categories: ["Unknown"],
+      description: "No details found.",
+      thumbnail: ""
+    };
+  }
 
+  async function renderBookDetails(bookId) {
     currentBookIdForDetails = bookId;
+    
+    // Set loading state
+    document.getElementById('bd-title').textContent = "Loading...";
+    document.getElementById('bd-author').textContent = "";
+    document.getElementById('bd-description').textContent = "Fetching book details...";
+    
+    const book = await fetchOpenLibraryBook(bookId);
 
     // Header info
     const coverEl = document.getElementById('bd-cover');
@@ -1070,7 +1110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       coverEl.style.background = `url('${book.thumbnail}') center/cover`;
       coverEl.innerHTML = '';
     } else {
-      coverEl.style.background = getGradientFromString(book.title);
+      coverEl.style.background = 'var(--sage)';
       coverEl.innerHTML = book.title.charAt(0);
     }
 
@@ -1080,97 +1120,207 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('bd-description').textContent = book.description || 'No description available for this book.';
 
     // Setup Rating
+    const db = getDB();
     const userRating = db.userRatings ? db.userRatings[bookId] : null;
     const stars = document.querySelectorAll('#bd-star-widget .star');
     const ratingDisplay = document.getElementById('bd-rating-display');
+    let lockedRating = userRating || 0;
+    let isLocked = !!userRating;
 
-    function updateStarsUI(rating) {
-      stars.forEach(s => {
-        if (parseInt(s.dataset.value) <= rating) {
-          s.classList.add('active');
-          s.style.color = 'var(--amber)';
+    const ratingLabels = {
+      0.5: '0.5 — Did Not Like It 😬', 1: '1.0 — Did Not Like It 😞',
+      1.5: '1.5 — It Was OK 🙁', 2: '2.0 — It Was OK 😐',
+      2.5: '2.5 — Liked It 🙂', 3: '3.0 — Liked It 😊',
+      3.5: '3.5 — Really Liked It 😄', 4: '4.0 — Really Liked It 😍',
+      4.5: '4.5 — Loved It 🤩', 5: '5.0 — It Was Amazing ✨'
+    };
+
+    function renderDetailsStars(value) {
+      stars.forEach((star, i) => {
+        const full = i + 1;
+        const half = i + 0.5;
+        if (value >= full) {
+          star.textContent = '★';
+          star.style.color = 'var(--amber)';
+          star.style.background = 'none';
+          star.style.webkitTextFillColor = 'unset';
+        } else if (value >= half) {
+          star.textContent = '★';
+          star.style.background = `linear-gradient(90deg, var(--amber) 50%, #ddd 50%)`;
+          star.style.webkitBackgroundClip = 'text';
+          star.style.webkitTextFillColor = 'transparent';
+          star.style.backgroundClip = 'text';
         } else {
-          s.classList.remove('active');
-          s.style.color = '#ccc';
+          star.textContent = '★';
+          star.style.color = '#ddd';
+          star.style.background = 'none';
+          star.style.webkitTextFillColor = 'unset';
         }
       });
-      ratingDisplay.textContent = rating ? `You rated this ${rating} star${rating > 1 ? 's' : ''}` : 'Hover to rate ✦';
     }
 
-    updateStarsUI(userRating || 0);
+    function getRatingFromEvent(e, star) {
+      const rect = star.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const half = x < rect.width / 2;
+      const val = parseFloat(star.dataset.value);
+      return half ? val - 0.5 : val;
+    }
+
+    renderDetailsStars(lockedRating);
+    if(lockedRating) {
+        ratingDisplay.textContent = `You rated: ${lockedRating} ★`;
+        ratingDisplay.style.color = 'var(--dusty-rose)';
+    } else {
+        ratingDisplay.textContent = 'Hover to rate ✦';
+        ratingDisplay.style.color = '';
+    }
 
     stars.forEach(star => {
-      star.onclick = () => {
-        const val = parseInt(star.dataset.value);
+      // Clean up old listeners by replacing node
+      const newStar = star.cloneNode(true);
+      star.parentNode.replaceChild(newStar, star);
+      
+      newStar.addEventListener('mousemove', e => {
+        if (isLocked) return;
+        const rating = getRatingFromEvent(e, newStar);
+        renderDetailsStars(rating);
+        ratingDisplay.textContent = ratingLabels[rating] || `${rating} stars`;
+      });
+
+      newStar.addEventListener('click', e => {
+        const rating = getRatingFromEvent(e, newStar);
+        lockedRating = rating;
+        isLocked = true;
+        renderDetailsStars(rating);
+        ratingDisplay.textContent = `You rated: ${rating} ★`;
+        ratingDisplay.style.color = 'var(--dusty-rose)';
+        
         const currentDb = getDB();
         if (!currentDb.userRatings) currentDb.userRatings = {};
-        currentDb.userRatings[bookId] = val;
+        currentDb.userRatings[bookId] = rating;
         saveDB(currentDb);
-        updateStarsUI(val);
-      };
-      star.onmouseenter = () => updateStarsUI(parseInt(star.dataset.value));
-      star.onmouseleave = () => {
-        const currentDb = getDB();
-        updateStarsUI(currentDb.userRatings ? currentDb.userRatings[bookId] || 0 : 0);
-      };
+        
+        newStar.style.transform = 'scale(1.4)';
+        setTimeout(() => { newStar.style.transform = ''; }, 300);
+      });
     });
 
+    const starWidget = document.getElementById('bd-star-widget');
+    // Replace widget to clear listeners
+    const newWidget = starWidget.cloneNode(true);
+    starWidget.parentNode.replaceChild(newWidget, starWidget);
+    
+    newWidget.addEventListener('mouseleave', () => {
+      if (!isLocked) {
+        renderDetailsStars(0);
+        const disp = document.getElementById('bd-rating-display');
+        disp.textContent = 'Hover to rate ✦';
+        disp.style.color = '';
+      }
+    });
+
+    // Update Shelf Status Buttons
+    updateBdShelfButtons(bookId);
+
     // Render Reviews
-    renderReviews(bookId);
+    renderBdReviews(bookId);
   }
 
-  function renderReviews(bookId) {
+  function updateBdShelfButtons(bookId) {
+    const db = getDB();
+    const btnReading = document.getElementById('btn-bd-reading');
+    const btnTbr = document.getElementById('btn-bd-tbr');
+    const btnDnf = document.getElementById('btn-bd-dnf');
+    
+    [btnReading, btnTbr, btnDnf].forEach(btn => {
+      btn.style.background = 'var(--warm-white)';
+      btn.style.color = 'var(--ink)';
+      btn.style.borderColor = '#e5e5e5';
+    });
+
+    if (db.shelves.reading.includes(bookId)) {
+      btnReading.style.background = 'var(--sage)';
+      btnReading.style.color = '#2d5a2d';
+      btnReading.style.borderColor = 'var(--sage)';
+    } else if (db.shelves.tbr.includes(bookId)) {
+      btnTbr.style.background = 'var(--sage)';
+      btnTbr.style.color = '#2d5a2d';
+      btnTbr.style.borderColor = 'var(--sage)';
+    } else if (db.shelves.dnf.includes(bookId)) {
+      btnDnf.style.background = '#ffe5e5';
+      btnDnf.style.color = '#a03030';
+      btnDnf.style.borderColor = '#ffe5e5';
+    }
+
+    const setShelf = (shelfName) => {
+      const currentDb = getDB();
+      ['reading', 'tbr', 'read', 'dnf'].forEach(s => {
+         currentDb.shelves[s] = currentDb.shelves[s].filter(id => id !== bookId);
+      });
+      currentDb.shelves[shelfName].push(bookId);
+      saveDB(currentDb);
+      updateBdShelfButtons(bookId);
+      // Make sure library book grid updates later
+    };
+
+    btnReading.onclick = () => setShelf('reading');
+    btnTbr.onclick = () => setShelf('tbr');
+    btnDnf.onclick = () => setShelf('dnf');
+  }
+
+  function renderBdReviews(bookId) {
     const db = getDB();
     const reviews = (db.reviews && db.reviews[bookId]) ? db.reviews[bookId] : [];
-    const listEl = document.getElementById('reviews-list');
+    const listEl = document.getElementById('bd-reviews-list');
     listEl.innerHTML = '';
 
     if (reviews.length === 0) {
-      listEl.innerHTML = '<p style="color: var(--ink-light); text-align: center; margin-top: 2rem;">No reviews yet. Be the first to share your thoughts!</p>';
+      listEl.innerHTML = '<p style="color: var(--ink-light); text-align: left;">No reviews yet. Be the first to share your thoughts!</p>';
       return;
     }
 
-    reviews.forEach((rev, index) => {
+    reviews.forEach(rev => {
       const card = document.createElement('div');
       card.className = 'review-card';
-
-      let repliesHtml = '';
-      if (rev.replies && rev.replies.length > 0) {
-        repliesHtml = '<div class="reply-list">';
-        rev.replies.forEach(reply => {
-          repliesHtml += `
-            <div class="reply-card">
-              <div class="review-author" style="font-size: 0.85rem;">${reply.author}</div>
-              <div class="review-content" style="font-size: 0.85rem; margin-bottom: 0;">${reply.content}</div>
-            </div>
-          `;
-        });
-        repliesHtml += '</div>';
-      }
-
+      card.style = 'background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 10px rgba(0,0,0,0.02);';
       card.innerHTML = `
-        <div class="review-header">
-          <div class="review-avatar">${rev.author.charAt(0)}</div>
-          <div class="review-meta">
-            <div class="review-author">${rev.author}</div>
-            <div class="review-date">${new Date(rev.date).toLocaleDateString()}</div>
-          </div>
-        </div>
-        <div class="review-content">${rev.content}</div>
-        <div class="review-actions">
-          <button class="btn-reply" onclick="document.getElementById('reply-box-${index}').classList.toggle('active')">Reply</button>
-        </div>
-        ${repliesHtml}
-        <div class="reply-input-box" id="reply-box-${index}">
-          <div style="display:flex; gap:0.5rem;">
-            <input type="text" id="reply-input-${index}" placeholder="Write a reply..." style="flex:1; padding:0.5rem; border:1px solid #eee; border-radius:4px; font-family:'DM Sans', sans-serif;">
-            <button class="btn btn-secondary" onclick="postReply('${bookId}', ${index})" style="padding:0.5rem 1rem;">Post</button>
+        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--lavender); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">${rev.avatar || '🌸'}</div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">${rev.author}</div>
+            <div style="font-size: 0.95rem; line-height: 1.6; color: var(--ink);">${rev.content.replace(/\\n/g, '<br>')}</div>
           </div>
         </div>
       `;
       listEl.appendChild(card);
     });
   }
+
+  const btnSubmitReview = document.getElementById('btn-bd-submit-review');
+  if (btnSubmitReview) {
+    btnSubmitReview.addEventListener('click', () => {
+      const input = document.getElementById('bd-new-review');
+      const val = input.value.trim();
+      if (!val) return;
+      
+      const db = getDB();
+      if (!db.reviews) db.reviews = {};
+      if (!db.reviews[currentBookIdForDetails]) db.reviews[currentBookIdForDetails] = [];
+      
+      db.reviews[currentBookIdForDetails].unshift({
+        author: "You",
+        avatar: "🍵",
+        content: val,
+        replies: []
+      });
+      saveDB(db);
+      
+      input.value = '';
+      renderBdReviews(currentBookIdForDetails);
+    });
+  }
+
 
   // Expose postReply to window so inline onclick works
   window.postReply = function (bookId, reviewIndex) {
