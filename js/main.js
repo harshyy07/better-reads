@@ -1062,11 +1062,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function fetchOpenLibraryBook(bookId) {
     try {
       const db = getDB();
+      const decodedBookId = decodeURIComponent(bookId);
+      
+      if (db.books && db.books[decodedBookId]) {
+        return db.books[decodedBookId];
+      }
       if (db.books && db.books[bookId]) {
         return db.books[bookId];
       }
+
       // Fetch dynamically
-      const res = await fetch(`https://openlibrary.org/search.json?q=${bookId}`);
+      const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(decodedBookId)}`);
       const data = await res.json();
       if (data.docs && data.docs.length > 0) {
         const doc = data.docs[0];
@@ -1074,23 +1080,25 @@ document.addEventListener('DOMContentLoaded', async () => {
           title: doc.title,
           authors: doc.author_name || ['Unknown'],
           categories: doc.subject || ['Fiction'],
-          description: `First published in ${doc.first_publish_year}. An intriguing book about ${doc.subject ? doc.subject.slice(0,3).join(', ') : 'various topics'}.`,
-          thumbnail: `https://covers.openlibrary.org/b/id/${bookId}-L.jpg`
+          description: `First published in ${doc.first_publish_year || 'unknown year'}. An intriguing book about ${doc.subject ? doc.subject.slice(0,3).join(', ') : 'various topics'}.`,
+          thumbnail: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg` : `https://covers.openlibrary.org/b/id/${decodedBookId}-L.jpg`
         };
         if (!db.books) db.books = {};
-        db.books[bookId] = newBook;
+        db.books[decodedBookId] = newBook;
         saveDB(db);
         return newBook;
       }
     } catch(e) {
       console.error(e);
     }
+    
+    const isCoverId = /^\d+$/.test(bookId);
     return {
-      title: "Unknown Book",
-      authors: ["Unknown"],
-      categories: ["Unknown"],
-      description: "No details found.",
-      thumbnail: ""
+      title: isCoverId ? "Featured Book" : "Unknown Book",
+      authors: ["BetterReads Selection"],
+      categories: ["Featured"],
+      description: isCoverId ? "A beautiful edition highlighted in our community marquee. Discover your next great adventure." : "No details found.",
+      thumbnail: isCoverId ? `https://covers.openlibrary.org/b/id/${bookId}-L.jpg` : ""
     };
   }
 
