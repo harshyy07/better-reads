@@ -4,9 +4,9 @@ BetterReads is a beautiful, cozy, and highly interactive Single Page Application
 
 ## 🛠️ Technology Stack
 - **Frontend**: Vanilla HTML5, CSS3, JavaScript (ES6+). No heavy frameworks.
-- **Database**: `localStorage` (Client-side persistence for library shelves, discourse threads, and book clubs).
+- **Backend & Auth**: Supabase (PostgreSQL, Google OAuth, Magic Links) & `localStorage` cache.
 - **Data Source**: [OpenLibrary API](https://openlibrary.org/dev/docs/api/search) (Real-time, rate-limit-friendly book fetching).
-- **Architecture**: Custom Hash-based SPA Router (`#home`, `#library`, `#discover`, etc.).
+- **Architecture**: Custom Hash-based SPA Router (`#home`, `#library`, `#discover`, `#stats`, etc.).
 
 ## ✨ Core Features
 
@@ -17,9 +17,9 @@ BetterReads is a beautiful, cozy, and highly interactive Single Page Application
 
 ### 2. 🌌 Infinite Discover & Search
 - **Live Search**: Debounced search bar that queries the OpenLibrary API to fetch real book data instantly.
-- **Genre Pills**: Quick-filter buttons (Fantasy, Romance, Sci-Fi) that trigger API queries by subject.
-- **Infinite Scrolling**: A "Load More Books ↓" button that handles pagination (`page` and `limit`) to infinitely append new books to the grid.
-- **One-Click Add**: "+ TBR" buttons on every discovered book that immediately injects the book into the local `betterreads_db` database.
+- **Mood & Genre Filters**: Quick-filter pill buttons to narrow down books by traditional genres (Fantasy, Sci-Fi) or aesthetic moods (Cozy, Dark Academia, Heartbreaking).
+- **Infinite Scrolling**: Automatically loads more books as you scroll down the page.
+- **One-Click Add**: "+ TBR" buttons on every discovered book that immediately injects the book into your local library.
 
 ### 3. 💬 Interactive Discourse & Book Clubs
 - **Community Threads**: A fully localized forum where users can create new discussion threads, select spoiler tags, and read preview snippets.
@@ -35,6 +35,10 @@ BetterReads is a beautiful, cozy, and highly interactive Single Page Application
 - An embedded, interactive mini-player widget designed to play ambient reading music.
 - Features a simulated tracklist, progress bar, and play/pause toggles to complete the cozy reading nook vibe.
 
+### 6. 📊 Reading Stats (Wrapped)
+- A highly shareable, Spotify Wrapped-inspired aesthetic page (`#stats`).
+- Automatically calculates and dynamically updates "Books Devoured," "Pages Turned," and "Top Vibe (Genre)" based on the books inside your Completed shelf.
+
 ## 🎨 Design System & Palette
 The app uses a carefully curated, pastel-heavy color palette defined in `style.css` via CSS Variables to evoke a warm, welcoming feeling:
 - `--cream`: `#FFF8F0`
@@ -46,14 +50,14 @@ The app uses a carefully curated, pastel-heavy color palette defined in `style.c
 - `--ink`: `#3B2F2F`
 
 ## 📈 Recent Updates & Changelog
+- **Security Audit & XSS Patch**: Sanitized and escaped API/user-generated interpolations to prevent Cross-Site Scripting.
+- **Spotify Wrapped Aesthetic**: Built a dynamic, gorgeous Reading Stats page calculating metrics directly from the user's completed shelf.
+- **Google OAuth & Supabase Auth**: Fully integrated a scalable authentication flow using Supabase. Replaced the dummy auth wizard with robust Magic Links and Google Login, seamlessly handling new profile creations.
+- **Mood Filters**: Added aesthetic mood filters (Cozy, Dark Academia, Ethereal) alongside the standard genre filters on the Discover page.
 - **Simulated Spotify Player**: Restored footer styling and added a cozy integrated lofi player.
-- **Utility Scripts**: Added automation utilities to manage app functionality.
 - **Aesthetic Overhaul**: Implemented a pastel pink/purple palette along with hand-drawn library buttons for a more aesthetic experience.
-- **Authentication**: Built a multi-step authentication wizard and integrated Supabase auth.
-- **Modal Library Shelves**: Refactored the library shelves to use a sleek modal overlay.
 
 ## 🚀 Future Roadmap (v2 Ideas)
-- Implement full backend user authentication (Firebase/Supabase).
-- Migrate `localStorage` database to a cloud database (Firestore/PostgreSQL) for cross-device syncing.
+- Migrate the core `localStorage` book library to a cloud database (Supabase PostgreSQL) for seamless cross-device syncing.
 - Add user-to-user replying and nested comment threads in the Discourse tab.
 - Integrate the Spotify Web Playback SDK for real, authenticated audio streaming instead of simulated ambient tracks.
