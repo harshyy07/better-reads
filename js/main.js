@@ -16,6 +16,16 @@ if (window.supabase) {
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+  function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   let isLoggedIn = false;
   let currentUser = null;
 
@@ -31,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (profile && profile.avatar) {
           completeLogin(profile.avatar);
         } else {
-          showAuthStep(2); // Actually wait, showAuthStep might not be defined if hoisted improperly, but it's a function so it's fine.
+          showProfileCompletionStep();
         }
       }
 
@@ -64,6 +74,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const authCloseBtn = document.getElementById('auth-close-btn');
   const navAvatar = document.getElementById('nav-avatar');
   const navGetStarted = document.getElementById('nav-get-started');
+  const ctaSignup = document.getElementById('cta-signup');
+  const ctaSignin = document.getElementById('cta-signin');
   const authFormStep1 = document.getElementById('auth-form-step1');
   const authFormStep2 = document.getElementById('auth-form-step2');
   const authStep1 = document.getElementById('auth-step-1');
@@ -80,6 +92,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Reset to step 1
     if (authStep1) authStep1.style.display = 'block';
     if (authStep2) authStep2.style.display = 'none';
+  }
+
+  let isOAuthProfileCompletion = false;
+
+  function showProfileCompletionStep() {
+    isOAuthProfileCompletion = true;
+    showAuthModal();
+    if (authStep1) authStep1.style.display = 'none';
+    if (authStep2) authStep2.style.display = 'block';
+    if (authCodeMessage) authCodeMessage.textContent = "Please complete your profile to continue.";
+    
+    // Hide code and password fields for OAuth
+    const authCodeInput = document.getElementById('auth-code');
+    if (authCodeInput) {
+      authCodeInput.required = false;
+      authCodeInput.parentElement.style.display = 'none';
+    }
+    const authPasswordInput = document.getElementById('auth-password');
+    if (authPasswordInput) {
+      authPasswordInput.required = false;
+      authPasswordInput.parentElement.style.display = 'none';
+    }
   }
 
   function closeAuthModal() {
@@ -129,11 +163,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  if (ctaSignup) {
+    ctaSignup.addEventListener('click', (e) => {
+      if (!isLoggedIn) {
+        e.preventDefault();
+        showAuthModal();
+      }
+    });
+  }
+
+  if (ctaSignin) {
+    ctaSignin.addEventListener('click', (e) => {
+      if (!isLoggedIn) {
+        e.preventDefault();
+        showAuthModal();
+      }
+    });
+  }
+
   // Google Auth Button
   if (btnGoogleAuth) {
-    btnGoogleAuth.addEventListener('click', () => {
-      completeLogin('G');
-      console.log('Logged in with Google');
+    btnGoogleAuth.addEventListener('click', async () => {
+      if (!supabaseClient) {
+        alert("Authentication service is unavailable.");
+        return;
+      }
+      try {
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin
+          }
+        });
+        if (error) {
+          console.error("Google Auth Error:", error);
+          alert(error.message);
+        }
+      } catch (err) {
+        console.error("Unexpected error during Google Auth:", err);
+      }
     });
   }
 
@@ -194,31 +262,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (authFormStep2) {
     authFormStep2.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = authEmailInput.value;
-      const code = document.getElementById('auth-code').value;
       const username = document.getElementById('auth-username').value;
-      const password = document.getElementById('auth-password').value;
-
       const submitBtn = authFormStep2.querySelector('button[type="submit"]');
       const originalText = submitBtn.textContent;
       submitBtn.textContent = 'Verifying...';
       submitBtn.disabled = true;
 
-      // Verify OTP
-      const { data, error } = await supabaseClient.auth.verifyOtp({ email, token: code, type: 'email' });
+      if (!isOAuthProfileCompletion) {
+        const email = authEmailInput.value;
+        const code = document.getElementById('auth-code').value;
+        const password = document.getElementById('auth-password').value;
 
-      if (error) {
-        alert(error.message);
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-        return;
-      }
-
-      currentUser = data.user;
-
-      // Optionally update password if provided
-      if (password) {
-        await supabaseClient.auth.updateUser({ password });
+        // Verify OTP
+        const { data, error } = await supabaseClient.auth.verifyOtp({ email, token: code, type: 'email' });
+        if (error) {
+          alert(error.message);
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+          return;
+        }
+        currentUser = data.user;
+        if (password) {
+          await supabaseClient.auth.updateUser({ password });
+        }
+      } else {
+        // We already have a session from OAuth
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          currentUser = session.user;
+        } else {
+          alert("Session lost. Please try logging in again.");
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+          return;
+        }
       }
 
       // Upsert profile
@@ -236,7 +313,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       completeLogin(selectedAvatar);
-      console.log('User logged in and profile created with real email!');
+      console.log('User profile created and logged in!');
     });
   }
 
@@ -254,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     '#library': 'page-library',
     '#rating': 'page-rating',
     '#discourse': 'page-discourse',
-    '#authors': 'page-authors',
+    '#stats': 'page-stats',
     '#cta': 'page-home'
   };
 
@@ -263,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'page-discover': 'nav-discover',
     'page-library': 'nav-library',
     'page-discourse': 'nav-discourse',
-    'page-authors': 'nav-authors'
+    'page-stats': 'nav-stats'
   };
 
   function showPage(hash, scrollTargetId = null) {
@@ -294,6 +371,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (bookIdToRender) {
         renderBookDetails(bookIdToRender);
+      } else if (targetPageId === 'page-stats') {
+        if (typeof renderReadingStats === 'function') renderReadingStats();
       }
     }
 
@@ -543,23 +622,8 @@ document.addEventListener('DOMContentLoaded', async () => {
      7. GENRE PILLS (Discover)
      ────────────────────────────────────────────────────────── */
   let activeDiscoverGenre = '';
+  let activeDiscoverMood = '';
   let discoverSearchQuery = '';
-
-  document.querySelectorAll('.genre-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      document.querySelectorAll('.genre-pill').forEach(p => p.classList.remove('active'));
-
-      // Toggle logic
-      if (activeDiscoverGenre === pill.dataset.genre) {
-        activeDiscoverGenre = ''; // Deselect
-      } else {
-        pill.classList.add('active');
-        activeDiscoverGenre = pill.dataset.genre;
-      }
-
-      renderDiscoverBooks();
-    });
-  });
 
 
   /* ──────────────────────────────────────────────────────────
@@ -964,6 +1028,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     return `linear-gradient(135deg, ${c1}, ${c2})`;
   }
 
+  function renderReadingStats() {
+    const db = getDB();
+    const completedIds = db.shelves.completed || [];
+    
+    let totalBooks = completedIds.length;
+    let totalPages = 0;
+    let genres = {};
+    
+    completedIds.forEach(id => {
+      const book = db.books[id];
+      if (!book) return;
+      
+      // Sum pages
+      if (book.pageCount) totalPages += parseInt(book.pageCount) || 0;
+      
+      // Tally genres
+      if (book.categories && book.categories.length > 0) {
+        book.categories.forEach(cat => {
+          const g = cat.trim();
+          if (g) {
+            genres[g] = (genres[g] || 0) + 1;
+          }
+        });
+      }
+    });
+    
+    // Find top genre
+    let topGenre = "N/A";
+    let maxCount = 0;
+    for (const [g, count] of Object.entries(genres)) {
+      if (count > maxCount) {
+        maxCount = count;
+        topGenre = g;
+      }
+    }
+    
+    // Update DOM elements
+    const elBooks = document.getElementById('wrap-books-count');
+    const elPages = document.getElementById('wrap-pages-count');
+    const elGenre = document.getElementById('wrap-top-genre');
+    const elStreak = document.getElementById('wrap-streak');
+    
+    if (elBooks) elBooks.textContent = totalBooks;
+    if (elPages) elPages.textContent = totalPages.toLocaleString();
+    if (elGenre) {
+      elGenre.textContent = topGenre === "N/A" ? "No Data" : topGenre;
+      if (elGenre.textContent.length > 20) {
+        elGenre.textContent = elGenre.textContent.substring(0, 17) + '...';
+      }
+    }
+    
+    // Mock streak for visual flair (e.g. 12 days, or 0 if no books)
+    if (elStreak) {
+      elStreak.textContent = totalBooks > 0 ? "12 Days" : "0 Days";
+    }
+  }
+
   function renderLibraryBooks() {
     const db = getDB();
     const shelfMappings = {
@@ -1016,8 +1137,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             <button class="remove-book-btn" style="position:absolute; top: -10px; right: -10px; width:26px; height:26px; border-radius:50%; background:var(--dusty-rose); color:white; border:none; cursor:pointer; font-weight:bold; font-size:18px; display:flex; align-items:center; justify-content:center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10;">&minus;</button>
           </div>
           <div class="book-info">
-            <div class="book-title">${book.title}</div>
-            <div class="book-author">${book.authors[0] || 'Unknown'}</div>
+            <div class="book-title">${escapeHTML(book.title)}</div>
+            <div class="book-author">${escapeHTML(book.authors[0] || 'Unknown')}</div>
             ${ratingHtml}
           </div>
         `;
@@ -1407,8 +1528,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     let newIds = [];
     if (discoverSearchQuery) {
       newIds = await fetchAndCacheBooks([discoverSearchQuery], discoverStartIndex, false);
-    } else if (activeDiscoverGenre) {
-      newIds = await fetchAndCacheBooks([activeDiscoverGenre], discoverStartIndex, true);
+    } else if (activeDiscoverGenre || activeDiscoverMood) {
+      const qParts = [];
+      if (activeDiscoverGenre) qParts.push(activeDiscoverGenre);
+      if (activeDiscoverMood) qParts.push(activeDiscoverMood);
+      
+      if (activeDiscoverMood) {
+        newIds = await fetchAndCacheBooks([qParts.join(' ')], discoverStartIndex, false);
+      } else {
+        newIds = await fetchAndCacheBooks([activeDiscoverGenre], discoverStartIndex, true);
+      }
     } else {
       // Default state: just show some books from DB or fallback
       const db = getDB();
@@ -1459,11 +1588,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           <button class="dbc-shelf-btn" data-book-id="${book.id}" style="${btnStyle}">${btnText}</button>
         </div>
         <div class="dbc-info">
-          <div class="dbc-title">${book.title}</div>
-          <div class="dbc-author">${book.authors[0] || 'Unknown'}</div>
+          <div class="dbc-title">${escapeHTML(book.title)}</div>
+          <div class="dbc-author">${escapeHTML(book.authors[0] || 'Unknown')}</div>
           <div class="dbc-meta">
             <span class="dbc-rating">★★★★☆ ${book.averageRating}</span>
-            <span class="badge badge-lavender dbc-genre-tag" style="text-transform: capitalize;">${cat}</span>
+            <span class="badge badge-lavender dbc-genre-tag" style="text-transform: capitalize;">${escapeHTML(cat)}</span>
           </div>
         </div>
       `;
@@ -1497,7 +1626,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     discoverSearchInput.addEventListener('input', (e) => {
       const q = e.target.value.trim();
       discoverSearchQuery = q;
-      if (q.length > 0) activeDiscoverGenre = ''; // Clear genre if searching
+      if (q.length > 0) {
+        activeDiscoverGenre = ''; // Clear genre if searching
+        activeDiscoverMood = '';
+      }
 
       if (searchTimeout) clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
@@ -1510,15 +1642,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  document.querySelectorAll('.genre-pill').forEach(pill => {
+  document.querySelectorAll('#genre-pills .genre-pill').forEach(pill => {
     pill.addEventListener('click', () => {
       discoverSearchQuery = '';
       if (discoverSearchInput) discoverSearchInput.value = '';
 
-      document.querySelectorAll('.genre-pill').forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      activeDiscoverGenre = pill.dataset.genre;
+      if (activeDiscoverGenre === pill.dataset.genre) {
+        activeDiscoverGenre = '';
+        pill.classList.remove('active');
+      } else {
+        document.querySelectorAll('#genre-pills .genre-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        activeDiscoverGenre = pill.dataset.genre;
+      }
+      performDiscoverFetch();
+    });
+  });
 
+  document.querySelectorAll('#mood-pills .genre-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      discoverSearchQuery = '';
+      if (discoverSearchInput) discoverSearchInput.value = '';
+
+      if (activeDiscoverMood === pill.dataset.mood) {
+        activeDiscoverMood = '';
+        pill.classList.remove('active');
+      } else {
+        document.querySelectorAll('#mood-pills .genre-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        activeDiscoverMood = pill.dataset.mood;
+      }
       performDiscoverFetch();
     });
   });
@@ -1789,7 +1942,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const coverStyle = book.thumbnail
         ? `background: url('${book.thumbnail}') center/cover;`
         : `background: ${getGradientFromString(book.title)};`;
-      const coverContent = book.thumbnail ? '' : `<div style="padding: 1rem; color: white; text-align: center; font-weight: bold; font-size: 0.8rem; line-height: 1.2;">${book.title}</div>`;
+      const coverContent = book.thumbnail ? '' : `<div style="padding: 1rem; color: white; text-align: center; font-weight: bold; font-size: 0.8rem; line-height: 1.2;">${escapeHTML(book.title)}</div>`;
 
       card.innerHTML = `
         <div class="dbc-cover" style="${coverStyle}">

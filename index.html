@@ -27,7 +27,7 @@
         <li><a href="#discover" id="nav-discover">Discover</a></li>
         <li><a href="#library" id="nav-library">My Library</a></li>
         <li><a href="#discourse" id="nav-discourse">Discourse</a></li>
-        <li><a href="#authors" id="nav-authors">Authors</a></li>
+        <li><a href="#stats" id="nav-stats">My Stats</a></li>
       </ul>
       <div class="nav-cta">
         <a href="#cta" class="btn btn-primary" id="nav-get-started">Get Started</a>
@@ -214,15 +214,7 @@
               <li><a href="#rating" id="footer-rating">Star Ratings</a></li>
             </ul>
           </div>
-          <div class="footer-col">
-            <h4>Creators</h4>
-            <ul>
-              <li><a href="#authors" id="footer-authors">Author Portal</a></li>
-              <li><a href="#" id="footer-ama">Host an AMA</a></li>
-              <li><a href="#" id="footer-analytics">Analytics</a></li>
-              <li><a href="#" id="footer-claim">Claim a Book</a></li>
-            </ul>
-          </div>
+
           <div class="footer-col">
             <h4>Company</h4>
             <ul>
@@ -397,14 +389,30 @@
           <input type="text" id="discover-search" placeholder="Search books, authors, or series…"
             aria-label="Search books" />
         </div>
-        <div class="genre-pills reveal" id="genre-pills">
-          <button class="genre-pill gp-fantasy active" id="pill-fantasy" data-genre="fantasy">🔮 Fantasy</button>
-          <button class="genre-pill gp-romance" id="pill-romance" data-genre="romance">💌 Romance</button>
-          <button class="genre-pill gp-mystery" id="pill-mystery" data-genre="mystery">🕵️ Mystery</button>
-          <button class="genre-pill gp-scifi" id="pill-scifi" data-genre="scifi">🚀 Sci-Fi</button>
-          <button class="genre-pill gp-nonfiction" id="pill-nonfiction" data-genre="nonfiction">🌿 Non-Fiction</button>
-          <button class="genre-pill gp-literary" id="pill-literary" data-genre="literary">✍️ Literary Fiction</button>
-          <button class="genre-pill gp-historical" id="pill-historical" data-genre="historical">📜 Historical</button>
+        <div class="filter-groups-container reveal" style="display:flex; flex-direction:column; align-items:center; gap: 1.25rem; margin-bottom: 2.5rem;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap: 0.5rem; width: 100%;">
+            <div style="font-size:0.7rem; font-family:'DM Mono', monospace; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-light);">By Genre</div>
+            <div class="genre-pills" id="genre-pills" style="margin-bottom:0;">
+              <button class="genre-pill gp-fantasy active" id="pill-fantasy" data-genre="fantasy">🔮 Fantasy</button>
+              <button class="genre-pill gp-romance" id="pill-romance" data-genre="romance">💌 Romance</button>
+              <button class="genre-pill gp-mystery" id="pill-mystery" data-genre="mystery">🕵️ Mystery</button>
+              <button class="genre-pill gp-scifi" id="pill-scifi" data-genre="scifi">🚀 Sci-Fi</button>
+              <button class="genre-pill gp-nonfiction" id="pill-nonfiction" data-genre="nonfiction">🌿 Non-Fiction</button>
+              <button class="genre-pill gp-literary" id="pill-literary" data-genre="literary">✍️ Literary</button>
+              <button class="genre-pill gp-historical" id="pill-historical" data-genre="historical">📜 Historical</button>
+            </div>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; align-items:center; gap: 0.5rem; width: 100%;">
+            <div style="font-size:0.7rem; font-family:'DM Mono', monospace; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-light);">By Mood</div>
+            <div class="genre-pills" id="mood-pills" style="margin-bottom:0;">
+              <button class="genre-pill gp-cozy" data-mood="cozy">🍵 Cozy</button>
+              <button class="genre-pill gp-dark-academia" data-mood="dark-academia">🕰️ Dark Academia</button>
+              <button class="genre-pill gp-heartbreaking" data-mood="heartbreaking">💔 Heartbreaking</button>
+              <button class="genre-pill gp-ethereal" data-mood="ethereal">✨ Ethereal</button>
+              <button class="genre-pill gp-wholesome" data-mood="wholesome">🌻 Wholesome</button>
+            </div>
+          </div>
         </div>
         <div class="discover-books-grid reveal" id="discover-books-grid">
         </div>
@@ -549,80 +557,57 @@
   </div>
 
   <!-- ========================================================
-       PAGE 6: AUTHORS
+       PAGE 6: READING STATS (WRAPPED)
        ======================================================== -->
-  <div id="page-authors" class="page-section">
-    <section class="author-section" id="authors">
-      <div class="container author-inner">
-        <div class="reveal">
-          <div class="author-badge-row">✦ For Creators</div>
-          <h2>A home for <em style="color:var(--peach)">authors</em> too</h2>
-          <p>Get verified, post author notes, host AMAs, and see exactly how readers engage with your work — all in a
-            platform that actually respects books.</p>
-          <ul class="author-features">
-            <li>Verified Author badge on all your posts and book pages</li>
-            <li>Analytics: ratings over time, TBR vs Read vs DNF breakdown</li>
-            <li>Post author notes and reading guides on your books</li>
-            <li>Schedule AMA threads in Discourse</li>
-            <li>Claim or create your book listings</li>
-            <li>Request Featured placement (editor-reviewed, never paid)</li>
-          </ul>
-          <a href="#cta" class="btn btn-primary" id="author-cta"
-            style="background:var(--peach);color:#5a3010;box-shadow:0 8px 32px rgba(254,203,161,0.4)">Apply for Author
-            Access ✦</a>
+  <div id="page-stats" class="page-section">
+    <section class="stats-section" id="stats">
+      <div class="container">
+        <div class="section-header reveal">
+          <div class="section-label">Your Reading Wrapped</div>
+          <h2>A year in <em>books</em></h2>
+          <p>Your unique reading journey, beautifully visualised and ready to share.</p>
         </div>
-        <div class="reveal reveal-delay-1">
-          <div class="author-dashboard-preview" id="author-dashboard-preview">
-            <div class="dashboard-header">
-              <span class="dashboard-title">📊 Author Dashboard</span>
-              <span class="dashboard-badge">✦ Verified</span>
+        
+        <div class="wrapped-grid reveal reveal-delay-1">
+          <!-- Total Books Card -->
+          <div class="stat-wrap-card grad-peach">
+            <div class="wrap-icon">📚</div>
+            <div class="wrap-label">Books Devoured</div>
+            <div class="wrap-value" id="wrap-books-count">0</div>
+          </div>
+          
+          <!-- Total Pages Card -->
+          <div class="stat-wrap-card grad-lavender">
+            <div class="wrap-icon">📄</div>
+            <div class="wrap-label">Pages Turned</div>
+            <div class="wrap-value" id="wrap-pages-count">0</div>
+          </div>
+          
+          <!-- Top Genre Card -->
+          <div class="stat-wrap-card grad-sage" style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; text-align:left;">
+            <div>
+              <div class="wrap-label">Your Vibe</div>
+              <div class="wrap-value" id="wrap-top-genre" style="font-size: 2.5rem;">Mystery</div>
             </div>
-            <div class="stat-cards">
-              <div class="stat-card" id="dash-stat-1">
-                <div class="stat-card-num">4.7★</div>
-                <div class="stat-card-label">Avg Rating</div>
-              </div>
-              <div class="stat-card" id="dash-stat-2">
-                <div class="stat-card-num">12.4k</div>
-                <div class="stat-card-label">On TBR lists</div>
-              </div>
-              <div class="stat-card" id="dash-stat-3">
-                <div class="stat-card-num">8,901</div>
-                <div class="stat-card-label">Books Read</div>
-              </div>
-              <div class="stat-card" id="dash-stat-4">
-                <div class="stat-card-num">347</div>
-                <div class="stat-card-label">Reviews</div>
-              </div>
-            </div>
-            <div style="margin-bottom:0.75rem">
-              <div
-                style="font-size:0.72rem;color:rgba(255,248,240,0.5);margin-bottom:0.5rem;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em">
-                Ratings this month</div>
-              <div class="mini-chart" id="mini-chart">
-                <div class="mini-bar" style="height:35%"></div>
-                <div class="mini-bar" style="height:55%"></div>
-                <div class="mini-bar" style="height:45%"></div>
-                <div class="mini-bar" style="height:70%"></div>
-                <div class="mini-bar" style="height:60%"></div>
-                <div class="mini-bar highlight" style="height:90%"></div>
-                <div class="mini-bar" style="height:75%"></div>
-                <div class="mini-bar" style="height:85%"></div>
-                <div class="mini-bar highlight" style="height:95%"></div>
-                <div class="mini-bar" style="height:80%"></div>
-                <div class="mini-bar" style="height:88%"></div>
-                <div class="mini-bar highlight" style="height:100%"></div>
-              </div>
-            </div>
-            <div style="font-size:0.78rem;color:rgba(254,203,161,0.8);display:flex;align-items:center;gap:0.4rem">
-              📈 <span>+23% readers this month</span>
-            </div>
+            <div class="wrap-icon" style="font-size: 4rem; opacity: 0.8;">✨</div>
+          </div>
+          
+          <!-- Streak Card -->
+          <div class="stat-wrap-card grad-blush">
+            <div class="wrap-icon">🔥</div>
+            <div class="wrap-label">Current Streak</div>
+            <div class="wrap-value" id="wrap-streak">12 Days</div>
+          </div>
+          
+          <!-- Call to Action -->
+          <div class="stat-wrap-card" style="background: var(--ink); color: var(--cream); display:flex; flex-direction:column; justify-content:center;">
+            <div class="wrap-label" style="color: rgba(255,255,255,0.7);">Share your aesthetic</div>
+            <button class="btn btn-primary" style="margin-top:1rem; background: var(--warm-white); color: var(--ink); box-shadow: none; align-self:center;" onclick="alert('Screenshot mode activated! (Mock sharing)')">📸 Share to Insta</button>
           </div>
         </div>
       </div>
     </section>
   </div>
-
 
   <!-- ========================================================
        PAGE 7: BOOK DETAILS
