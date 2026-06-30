@@ -293,36 +293,92 @@ export function renderReadingStats() {
   const completedIds = store.shelves.completed || [];
   let totalBooks = completedIds.length;
   let totalPages = 0;
-  let genres = {};
   
   completedIds.forEach(id => {
     const book = store.books[id];
-    if (!book) return;
-    if (book.pageCount) totalPages += parseInt(book.pageCount) || 0;
-    if (book.categories && book.categories.length > 0) {
-      book.categories.forEach(cat => {
-        const g = cat.trim();
-        if (g) genres[g] = (genres[g] || 0) + 1;
-      });
-    }
+    if (book && book.pageCount) totalPages += parseInt(book.pageCount) || 0;
   });
   
-  let topGenre = "N/A";
-  let maxCount = 0;
-  for (const [g, count] of Object.entries(genres)) {
-    if (count > maxCount) { maxCount = count; topGenre = g; }
+  // Section 1: Currently Reading
+  const readingIds = store.shelves.reading || [];
+  const elReadingCard = document.getElementById('mockup-reading-card');
+  if (elReadingCard) {
+    if (readingIds.length > 0) {
+      const book = store.books[readingIds[0]];
+      const elTitle = document.getElementById('mockup-reading-title');
+      const elAuthor = document.getElementById('mockup-reading-author');
+      const elCover = document.getElementById('mockup-reading-cover');
+      
+      if (elTitle) elTitle.textContent = book.title;
+      if (elAuthor) elAuthor.textContent = book.authors ? `by ${book.authors.join(', ')}` : 'Unknown Author';
+      if (elCover) {
+        elCover.style.backgroundImage = book.thumbnail ? `url(${book.thumbnail})` : 'none';
+        elCover.textContent = book.thumbnail ? '' : '📚';
+      }
+      
+      // mock progress
+      const mockProgress = 68;
+      const elProgText = document.getElementById('mockup-reading-progress-text');
+      const elProgFill = document.getElementById('mockup-reading-progress-fill');
+      if (elProgText) elProgText.textContent = `${mockProgress}% Complete`;
+      if (elProgFill) {
+        setTimeout(() => {
+          elProgFill.style.width = `${mockProgress}%`;
+        }, 100);
+      }
+      elReadingCard.style.display = 'block';
+    } else {
+      elReadingCard.style.display = 'none';
+    }
   }
+
+  // Section 2: Goals
+  const readingGoal = 25;
+  const elGoalCurrent = document.getElementById('mockup-goal-current');
+  const elGoalTotal = document.getElementById('mockup-goal-total');
+  const elGoalPercentage = document.getElementById('mockup-goal-percentage');
+  const elGoalCircle = document.getElementById('mockup-goal-circle');
   
-  const elBooks = document.getElementById('wrap-books-count');
-  const elPages = document.getElementById('wrap-pages-count');
-  const elGenre = document.getElementById('wrap-top-genre');
-  const elStreak = document.getElementById('wrap-streak');
+  if (elGoalCurrent) elGoalCurrent.textContent = totalBooks;
+  if (elGoalTotal) elGoalTotal.textContent = readingGoal;
   
-  if (elBooks) elBooks.textContent = totalBooks;
-  if (elPages) elPages.textContent = totalPages.toLocaleString();
-  if (elGenre) {
-    elGenre.textContent = topGenre === "N/A" ? "No Data" : topGenre;
-    if (elGenre.textContent.length > 20) elGenre.textContent = elGenre.textContent.substring(0, 17) + '...';
+  const percentage = Math.min((totalBooks / readingGoal) * 100, 100);
+  if (elGoalPercentage) elGoalPercentage.textContent = `${Math.round(percentage)}%`;
+  
+  if (elGoalCircle) {
+    setTimeout(() => {
+      elGoalCircle.style.strokeDasharray = `${percentage}, 100`;
+    }, 100);
   }
-  if (elStreak) elStreak.textContent = totalBooks > 0 ? "12 Days" : "0 Days";
+
+  // Section 3: Recent Additions
+  const recentContainer = document.getElementById('mockup-recent-additions');
+  if (recentContainer) {
+    recentContainer.innerHTML = '';
+    // Show up to 5 recently completed books
+    const recentBooks = completedIds.slice(-5).reverse();
+    recentBooks.forEach(id => {
+      const book = store.books[id];
+      if (!book) return;
+      const item = document.createElement('div');
+      item.className = 'mockup-book-item';
+      const coverHtml = book.thumbnail 
+        ? `<div class="mockup-book-cover" style="background-image: url('${book.thumbnail}')"></div>` 
+        : `<div class="mockup-book-cover" style="display:flex;align-items:center;justify-content:center;font-size:2rem;">📚</div>`;
+      
+      const genre = (book.categories && book.categories.length > 0) ? book.categories[0] : 'Fiction';
+      item.innerHTML = `
+        ${coverHtml}
+        <div class="mockup-book-title">${book.title}</div>
+        <div class="mockup-book-genre">${genre}</div>
+      `;
+      recentContainer.appendChild(item);
+    });
+  }
+
+  // Section 4: Simple Stats
+  const elPagesRead = document.getElementById('mockup-pages-read');
+  const elDayStreak = document.getElementById('mockup-day-streak');
+  if (elPagesRead) elPagesRead.textContent = totalPages.toLocaleString();
+  if (elDayStreak) elDayStreak.textContent = totalBooks > 0 ? "18" : "0";
 }

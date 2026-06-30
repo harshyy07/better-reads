@@ -388,22 +388,29 @@
           <input type="text" id="discover-search" placeholder="Search books, authors, or series…"
             aria-label="Search books" />
         </div>
-        <div class="filter-groups-container reveal" style="display:flex; flex-direction:column; align-items:center; gap: 1.25rem; margin-bottom: 2.5rem;">
+        <div class="filter-groups-container reveal"
+          style="display:flex; flex-direction:column; align-items:center; gap: 1.25rem; margin-bottom: 2.5rem;">
           <div style="display:flex; flex-direction:column; align-items:center; gap: 0.5rem; width: 100%;">
-            <div style="font-size:0.7rem; font-family:'DM Mono', monospace; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-light);">By Genre</div>
+            <div
+              style="font-size:0.7rem; font-family:'DM Mono', monospace; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-light);">
+              By Genre</div>
             <div class="genre-pills" id="genre-pills" style="margin-bottom:0;">
               <button class="genre-pill gp-fantasy active" id="pill-fantasy" data-genre="fantasy">🔮 Fantasy</button>
               <button class="genre-pill gp-romance" id="pill-romance" data-genre="romance">💌 Romance</button>
               <button class="genre-pill gp-mystery" id="pill-mystery" data-genre="mystery">🕵️ Mystery</button>
               <button class="genre-pill gp-scifi" id="pill-scifi" data-genre="scifi">🚀 Sci-Fi</button>
-              <button class="genre-pill gp-nonfiction" id="pill-nonfiction" data-genre="nonfiction">🌿 Non-Fiction</button>
+              <button class="genre-pill gp-nonfiction" id="pill-nonfiction" data-genre="nonfiction">🌿
+                Non-Fiction</button>
               <button class="genre-pill gp-literary" id="pill-literary" data-genre="literary">✍️ Literary</button>
-              <button class="genre-pill gp-historical" id="pill-historical" data-genre="historical">📜 Historical</button>
+              <button class="genre-pill gp-historical" id="pill-historical" data-genre="historical">📜
+                Historical</button>
             </div>
           </div>
-          
+
           <div style="display:flex; flex-direction:column; align-items:center; gap: 0.5rem; width: 100%;">
-            <div style="font-size:0.7rem; font-family:'DM Mono', monospace; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-light);">By Mood</div>
+            <div
+              style="font-size:0.7rem; font-family:'DM Mono', monospace; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-light);">
+              By Mood</div>
             <div class="genre-pills" id="mood-pills" style="margin-bottom:0;">
               <button class="genre-pill gp-cozy" data-mood="cozy">🍵 Cozy</button>
               <button class="genre-pill gp-dark-academia" data-mood="dark-academia">🕰️ Dark Academia</button>
@@ -560,50 +567,84 @@
        ======================================================== -->
   <div id="page-stats" class="page-section">
     <section class="stats-section" id="stats">
-      <div class="container">
-        <div class="section-header reveal">
-          <div class="section-label">Your Reading Wrapped</div>
-          <h2>A year in <em>books</em></h2>
-          <p>Your unique reading journey, beautifully visualised and ready to share.</p>
-        </div>
+      <div class="stat-mockup-container">
         
-        <div class="wrapped-grid reveal reveal-delay-1">
-          <!-- Total Books Card -->
-          <div class="stat-wrap-card grad-peach">
-            <div class="wrap-icon">📚</div>
-            <div class="wrap-label">Books Devoured</div>
-            <div class="wrap-value" id="wrap-books-count">0</div>
+        <!-- Header -->
+        <div class="mockup-header">
+          <div class="mockup-header-left">
+            <h1 class="mockup-header-title">My Library</h1>
           </div>
-          
-          <!-- Total Pages Card -->
-          <div class="stat-wrap-card grad-lavender">
-            <div class="wrap-icon">📄</div>
-            <div class="wrap-label">Pages Turned</div>
-            <div class="wrap-value" id="wrap-pages-count">0</div>
-          </div>
-          
-          <!-- Top Genre Card -->
-          <div class="stat-wrap-card grad-sage" style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; text-align:left;">
-            <div>
-              <div class="wrap-label">Your Vibe</div>
-              <div class="wrap-value" id="wrap-top-genre" style="font-size: 2.5rem;">Mystery</div>
+          <div class="mockup-header-icon">⚙️</div>
+        </div>
+
+        <!-- Section 1: Currently Reading -->
+        <div class="mockup-section-title">CURRENTLY READING</div>
+        <div class="mockup-card mockup-reading-card" id="mockup-reading-card">
+          <div class="mockup-reading-content">
+            <div class="mockup-reading-cover" id="mockup-reading-cover">📚</div>
+            <div class="mockup-reading-info">
+              <div class="mockup-reading-title" id="mockup-reading-title">No book currently</div>
+              <div class="mockup-reading-author" id="mockup-reading-author">by Author</div>
+              <div class="mockup-reading-progress-text" id="mockup-reading-progress-text">0% Complete</div>
+              <div class="mockup-reading-progress-bar">
+                <div class="mockup-reading-progress-fill" id="mockup-reading-progress-fill" style="width: 0%;"></div>
+              </div>
+              <button class="mockup-btn-primary">▷ Continue Reading</button>
             </div>
-            <div class="wrap-icon" style="font-size: 4rem; opacity: 0.8;">✨</div>
-          </div>
-          
-          <!-- Streak Card -->
-          <div class="stat-wrap-card grad-blush">
-            <div class="wrap-icon">🔥</div>
-            <div class="wrap-label">Current Streak</div>
-            <div class="wrap-value" id="wrap-streak">12 Days</div>
-          </div>
-          
-          <!-- Call to Action -->
-          <div class="stat-wrap-card" style="background: var(--ink); color: var(--cream); display:flex; flex-direction:column; justify-content:center;">
-            <div class="wrap-label" style="color: rgba(255,255,255,0.7);">Share your aesthetic</div>
-            <button class="btn btn-primary" style="margin-top:1rem; background: var(--warm-white); color: var(--ink); box-shadow: none; align-self:center;" onclick="alert('Screenshot mode activated! (Mock sharing)')">📸 Share to Insta</button>
           </div>
         </div>
+
+        <!-- Section 2: Goals -->
+        <div class="mockup-card mockup-goal-card">
+          <div class="mockup-goal-info">
+            <div class="mockup-goal-title">2024 Goals</div>
+            <div class="mockup-goal-text"><span id="mockup-goal-current">0</span> of <span id="mockup-goal-total">25</span> books completed</div>
+            <div class="mockup-goal-pill">On Track ✨</div>
+          </div>
+          <div class="mockup-goal-chart">
+            <svg viewBox="0 0 36 36" class="circular-chart">
+              <path class="circle-bg"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path class="circle" id="mockup-goal-circle"
+                stroke-dasharray="0, 100"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <text x="18" y="20.35" class="percentage" id="mockup-goal-percentage">0%</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Section 3: Recent Additions -->
+        <div class="mockup-section-header">
+          <div class="mockup-section-title" style="margin-bottom:0;">RECENT ADDITIONS</div>
+          <a href="#library" class="mockup-see-all">See All</a>
+        </div>
+        <div class="mockup-horizontal-scroll" id="mockup-recent-additions">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Section 4: Simple Stats -->
+        <div class="mockup-simple-stats">
+          <div class="mockup-stat-box">
+            <div class="mockup-stat-val" id="mockup-pages-read">0</div>
+            <div class="mockup-stat-label">Pages Read</div>
+          </div>
+          <div class="mockup-stat-box">
+            <div class="mockup-stat-val" id="mockup-day-streak">0</div>
+            <div class="mockup-stat-label">Day Streak</div>
+          </div>
+        </div>
+
+        <!-- Fixed Share Button -->
+        <button class="fixed-share-btn" title="Share to Insta"
+          onclick="alert('Screenshot mode activated! (Mock sharing)')">
+          📸
+        </button>
       </div>
     </section>
   </div>
@@ -820,4 +861,5 @@
 
   <script type="module" src="/src/js/main.js"></script>
 </body>
+
 </html>
