@@ -3,7 +3,7 @@
 BetterReads is a beautiful, cozy, and highly interactive Single Page Application (SPA) designed as a modern, aesthetic alternative to Goodreads. It leverages a custom vanilla design system inspired by cottagecore and lofi aesthetics, offering a seamless and gamified reading tracker experience.
 
 ## 🛠️ Technology Stack
-- **Frontend**: Vanilla HTML5, CSS3, JavaScript (ES6+). No heavy frameworks.
+- **Frontend**: Vanilla HTML5, CSS3, JavaScript (ES6+) bundled with Vite. No heavy UI frameworks.
 - **Backend & Auth**: Supabase (PostgreSQL, Google OAuth, Magic Links) & `localStorage` cache.
 - **Data Source**: [OpenLibrary API](https://openlibrary.org/dev/docs/api/search) (Real-time, rate-limit-friendly book fetching).
 - **Architecture**: Custom Hash-based SPA Router (`#home`, `#library`, `#discover`, `#stats`, etc.).
@@ -56,6 +56,8 @@ The app uses a carefully curated, pastel-heavy color palette defined in `style.c
 - **Mood Filters**: Added aesthetic mood filters (Cozy, Dark Academia, Ethereal) alongside the standard genre filters on the Discover page.
 - **Simulated Spotify Player**: Restored footer styling and added a cozy integrated lofi player.
 - **Aesthetic Overhaul**: Implemented a pastel pink/purple palette along with hand-drawn library buttons for a more aesthetic experience.
+- **Vite Migration & Architecture**: Refactored the app to use Vite, modularized JS components, and improved load times.
+- **Stats & Discover Refinements**: Updated the Stats page layout to match mobile mockups, applied the global color palette, and fixed broken tags on the Discover page.
 
 ## 🚀 Future Roadmap (v2 Ideas)
 - Migrate the core `localStorage` book library to a cloud database (Supabase PostgreSQL) for seamless cross-device syncing.
